@@ -1,0 +1,29 @@
+:root {
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background: theme('colors.gov-bg');
+    color: theme('colors.gov-blue');
+  }
+
+  :focus-visible {
+    outline: 3px solid theme('colors.gov-accent');
+    outline-offset: 2px;
+  }
+}
