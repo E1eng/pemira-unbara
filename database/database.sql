@@ -161,12 +161,6 @@ on votes for select
 to service_role 
 using (true);
 
-drop policy if exists "Admin users can view votes" on votes;
-create policy "Admin users can view votes"
-on votes for select
-to authenticated
-using (is_admin());
-
 drop policy if exists "Admin users can view audit logs" on audit_logs;
 create policy "Admin users can view audit logs"
 on audit_logs for select
@@ -371,7 +365,7 @@ begin
   insert into votes (candidate_id) values (p_candidate_id);
   
   -- Catat Log Sukses
-  insert into audit_logs (action, details) values ('VOTE_SUCCESS', p_client_info || jsonb_build_object('nik', p_nik));
+  insert into audit_logs (action, details) values ('VOTE_SUCCESS', jsonb_build_object('event', 'VOTE_SUCCESS'));
 
   return jsonb_build_object('status', 'success', 'message', 'Terima kasih, suara Anda telah direkam.');
 end;

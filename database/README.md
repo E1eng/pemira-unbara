@@ -68,7 +68,7 @@ Data kandidat.
 
 Daftar Pemilih Tetap (DPT).
 
-- `nik` (PK)
+- `nik` (PK) *(di konteks BEM, kolom ini dipakai untuk menyimpan NIM/NPM)*
 - `name`
 - `access_code_hash` (bcrypt)
 - `has_voted`
@@ -79,7 +79,7 @@ Daftar Pemilih Tetap (DPT).
 
 Penyimpanan suara **anonim**.
 
-- Tidak ada `nik` / user identity
+- Tidak ada `nik` / user identity (tidak ada data NIM/NPM di tabel ini)
 - Hanya menyimpan `candidate_id` + timestamp
 
 ### `audit_logs`
@@ -128,7 +128,7 @@ Ringkasan:
   - Admin: boleh select/update/delete
 - **`votes`**
   - Public: tidak boleh insert langsung
-  - Admin: boleh select untuk rekap
+  - Admin: tidak boleh membaca baris vote mentah; gunakan fungsi agregasi `get_vote_recap()`
 - **`audit_logs`**
   - Admin: boleh select
 - **`election_settings`**
@@ -150,7 +150,7 @@ Fungsi paling kritikal.
 - `security definer` (menjadi “gateway” aman untuk voting)
 - Validasi:
   - voting harus open (`election_settings.is_voting_open = true`)
-  - NIK harus ada
+  - NIM/NPM harus ada
   - kode akses harus cocok (cek hash)
   - tidak boleh double vote (`has_voted`)
 - Atomik (di dalam 1 transaksi):
@@ -164,7 +164,7 @@ Fungsi paling kritikal.
 
 Rate limit di-trigger saat:
 
-- NIK tidak ditemukan
+- NIM/NPM tidak ditemukan
 - token salah
 
 Kunci rate limit:

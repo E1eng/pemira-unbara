@@ -73,7 +73,7 @@ export default function AdminLayout() {
             </div>
             <div className="min-w-0">
               <div className="text-sm font-semibold text-white">Admin Panel</div>
-              <div className="text-xs text-zinc-300">Panitia Pilkades</div>
+              <div className="text-xs text-zinc-300">Panitia Pemilihan Ketua BEM</div>
             </div>
           </div>
 
@@ -85,7 +85,7 @@ export default function AdminLayout() {
               Kandidat
             </SidebarLink>
             <SidebarLink to="/admin/voters" icon={Users}>
-              Daftar Pemilih Terpilih (DPT)
+              Daftar Pemilih (DPT)
             </SidebarLink>
           </nav>
 

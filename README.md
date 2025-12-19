@@ -1,11 +1,11 @@
-# E-Voting Pilkades (Supabase + React)
+# E-Voting Pemilihan Ketua BEM (Supabase + React)
 
-Aplikasi e-voting untuk pemilihan kepala desa (pilkades) berbasis web.
+Aplikasi e-voting untuk pemilihan Ketua **Badan Eksekutif Mahasiswa (BEM)** berbasis web.
 Fokus utama project ini:
 
 - **LUBER & Rahasia**: suara disimpan **anonim** (tidak ada relasi pemilih -> pilihan kandidat).
 - **Keamanan server-side**: validasi + pencegahan double-vote dilakukan lewat **RPC (PostgreSQL function)**.
-- **Anti brute-force**: rate limiting pada proses submit vote **berbasis client fingerprint** (IP + User-Agent), bukan per-NIK (menghindari DoS ke pemilih).
+- **Anti brute-force**: rate limiting pada proses submit vote **berbasis client fingerprint** (IP + User-Agent), bukan per NIM/NPM (menghindari DoS ke pemilih).
 
 ## Struktur Repository
 
@@ -30,8 +30,8 @@ Fokus utama project ini:
 ### Untuk Pemilih
 
 - **Login pemilih** menggunakan:
-  - NIK
-  - Kode Akses (token fisik dari surat undangan)
+  - NIM/NPM
+  - Kode Akses (token dari panitia)
 - **Voting**: pilih kandidat + konfirmasi
 - **Enforcement voting closed**: voting akan ditolak saat pemungutan ditutup (`election_settings.is_voting_open = false`)
 - **Hasil**:
@@ -46,7 +46,7 @@ Fokus utama project ini:
 - **Kelola pemilih (DPT)**:
   - tambah pemilih + generate token
   - reset status voting
-  - download rekap CSV (nik, nama, has_voted)
+  - download rekap CSV (nim, nama, has_voted)
 - **Audit log**: melihat aktivitas (LOGIN_FAIL, VOTE_SUCCESS, ADMIN_ACTION)
 
 ## Halaman / Routing

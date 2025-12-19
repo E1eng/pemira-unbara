@@ -16,7 +16,7 @@ export default function LoginPage() {
     setError(null)
 
     if (!nik.trim() || !accessCode.trim()) {
-      setError('NIK dan Kode Akses wajib diisi.')
+      setError('NIM/NPM dan Kode Akses wajib diisi.')
       return
     }
 
@@ -35,7 +35,7 @@ export default function LoginPage() {
           <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-lg sm:p-8">
             <h1 className="text-xl font-bold tracking-tight text-gov-blue sm:text-2xl">Masuk ke Bilik Suara</h1>
             <p className="mt-2 text-sm text-zinc-600">
-              Masukkan NIK dan Kode Akses sesuai surat undangan untuk melanjutkan.
+              Masukkan NIM/NPM dan Kode Akses dari panitia untuk melanjutkan.
             </p>
 
             {error ? (
@@ -47,7 +47,7 @@ export default function LoginPage() {
             <form onSubmit={onSubmit} className="mt-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-zinc-700" htmlFor="nik">
-                  NIK
+                  NIM/NPM
                 </label>
                 <input
                   id="nik"
@@ -56,7 +56,7 @@ export default function LoginPage() {
                   onChange={(e) => setNik(e.target.value)}
                   inputMode="numeric"
                   autoComplete="off"
-                  placeholder="Contoh: 3201xxxx..."
+                  placeholder="Contoh: 2235xxxx..."
                   className="mt-2 h-12 w-full rounded-xl border border-zinc-300 bg-white px-4 text-base text-zinc-900 shadow-sm placeholder:text-zinc-400 focus:border-gov-accent focus:outline-none focus:ring-4 focus:ring-gov-accent/15"
                 />
               </div>
@@ -75,7 +75,7 @@ export default function LoginPage() {
                   placeholder="Masukkan kode akses"
                   className="mt-2 h-12 w-full rounded-xl border border-zinc-300 bg-white px-4 text-base text-zinc-900 shadow-sm placeholder:text-zinc-400 focus:border-gov-accent focus:outline-none focus:ring-4 focus:ring-gov-accent/15"
                 />
-                <p className="mt-2 text-sm text-zinc-500">Kode Akses terdapat pada surat undangan fisik Anda.</p>
+                <p className="mt-2 text-sm text-zinc-500">Kode Akses diberikan oleh panitia pemilihan.</p>
               </div>
 
               <button

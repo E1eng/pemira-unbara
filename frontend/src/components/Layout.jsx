@@ -26,8 +26,8 @@ export default function Layout({ children }) {
                 <Landmark className="h-5 w-5" />
               </div>
               <div className="min-w-0">
-                <div className="text-base font-semibold leading-tight sm:text-lg">E-Voting Pilkades</div>
-                <div className="text-xs text-zinc-500 sm:text-sm">Sistem resmi pemilihan kepala desa</div>
+                <div className="text-base font-semibold leading-tight sm:text-lg">E-Voting Ketua BEM</div>
+                <div className="text-xs text-zinc-500 sm:text-sm">Sistem pemilihan Badan Eksekutif Mahasiswa</div>
               </div>
             </div>
 

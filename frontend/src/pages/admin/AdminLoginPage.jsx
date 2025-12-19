@@ -90,7 +90,7 @@ export default function AdminLoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   type="email"
                   autoComplete="email"
-                  placeholder="admin@desa.id"
+                  placeholder="admin@kampus.ac.id"
                   className="mt-2 h-12 w-full rounded-xl border border-zinc-300 bg-white px-4 text-base text-zinc-900 shadow-sm placeholder:text-zinc-400 focus:border-gov-accent focus:outline-none focus:ring-4 focus:ring-gov-accent/15"
                 />
               </div>

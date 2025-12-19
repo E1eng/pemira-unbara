@@ -34,7 +34,7 @@ export default function HomePage() {
               <div className="max-w-2xl">
                 <div className="text-sm font-semibold text-gov-accent">Portal Publik</div>
                 <h1 className="mt-2 text-2xl font-bold tracking-tight text-gov-blue sm:text-3xl">
-                  E-Voting Pilkades
+                  E-Voting Ketua BEM
                 </h1>
                 <p className="mt-2 text-sm text-zinc-600 sm:text-base">
                   Akses bilik suara digital, pantau quick count (jika dibuka panitia), dan lihat rekap suara.
@@ -60,7 +60,7 @@ export default function HomePage() {
 
                 {isAuthenticated ? (
                   <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
-                    Login aktif: <span className="font-mono font-semibold">{nik}</span>
+                    NIM/NPM aktif: <span className="font-mono font-semibold">{nik}</span>
                   </div>
                 ) : (
                   <div className="mt-3 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-700">
@@ -77,7 +77,7 @@ export default function HomePage() {
                 <Vote className="h-5 w-5" />
               </div>
               <div className="mt-3 text-sm font-semibold text-zinc-900">Bilik Suara</div>
-              <div className="mt-1 text-sm text-zinc-600">Masuk menggunakan NIK & Kode Akses dari surat undangan.</div>
+              <div className="mt-1 text-sm text-zinc-600">Masuk menggunakan NIM/NPM & Kode Akses dari panitia.</div>
               <div className="mt-4">
                 <Link
                   to={isAuthenticated ? '/vote' : '/login'}
@@ -144,7 +144,7 @@ export default function HomePage() {
             <div className="mt-3 space-y-3 text-sm text-zinc-700">
               <div className="flex gap-3">
                 <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-zinc-100 text-xs font-bold text-zinc-700">1</div>
-                <div>Tekan <span className="font-semibold">Masuk untuk Voting</span>, lalu masukkan NIK & Kode Akses dari surat undangan.</div>
+                <div>Tekan <span className="font-semibold">Masuk untuk Voting</span>, lalu masukkan NIM/NPM & Kode Akses dari panitia.</div>
               </div>
               <div className="flex gap-3">
                 <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-zinc-100 text-xs font-bold text-zinc-700">2</div>

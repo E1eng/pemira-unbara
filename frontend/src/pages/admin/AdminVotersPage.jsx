@@ -69,12 +69,12 @@ export default function AdminVotersPage() {
     const cleanedToken = token.trim()
 
     if (!cleanedNik || !cleanedName || !cleanedToken) {
-      setToast({ open: true, variant: 'warning', title: 'Periksa input', message: 'NIK, Nama, dan Token wajib diisi.' })
+      setToast({ open: true, variant: 'warning', title: 'Periksa input', message: 'NIM/NPM, Nama, dan Token wajib diisi.' })
       return
     }
 
     if (!/^[0-9]+$/.test(cleanedNik)) {
-      setToast({ open: true, variant: 'warning', title: 'Periksa input', message: 'NIK harus berupa angka.' })
+      setToast({ open: true, variant: 'warning', title: 'Periksa input', message: 'NIM/NPM harus berupa angka.' })
       return
     }
 
@@ -164,7 +164,7 @@ export default function AdminVotersPage() {
     const semiCount = (first.match(/;/g) || []).length
     const delimiter = semiCount > commaCount ? ';' : ','
 
-    const looksLikeHeader = /nik/i.test(first) && /name/i.test(first)
+    const looksLikeHeader = /(nik|nim|npm)/i.test(first) && /(name|nama)/i.test(first)
     const startIndex = looksLikeHeader ? 1 : 0
 
     const rows = []
@@ -189,7 +189,7 @@ export default function AdminVotersPage() {
       return s
     }
 
-    const header = ['Name', 'NIK', 'Token']
+    const header = ['Name', 'NIM/NPM', 'Token']
     const lines = [header.join(',')]
     rows.forEach((r) => {
       lines.push([escape(r.name), escape(r.nik), escape(r.token)].join(','))
@@ -206,7 +206,7 @@ export default function AdminVotersPage() {
       return s
     }
 
-    const header = ['nik', 'name', 'has_voted']
+    const header = ['nim', 'name', 'has_voted']
     const lines = [header.join(',')]
     rows.forEach((r) => {
       lines.push([escape(r.nik), escape(r.name), escape(r.has_voted)].join(','))
@@ -314,7 +314,7 @@ export default function AdminVotersPage() {
 <div>Generated: ${new Date().toLocaleString()}</div>
 <div class="warn"><b>WARNING:</b> Download/cetak daftar ini SEKARANG. Token disimpan dalam bentuk hash di database dan tidak bisa dilihat kembali.</div>
 <table>
-<thead><tr><th>No</th><th>Nama</th><th>NIK</th><th>Token</th></tr></thead>
+<thead><tr><th>No</th><th>Nama</th><th>NIM/NPM</th><th>Token</th></tr></thead>
 <tbody>${rowsHtml}</tbody>
 </table>
 </body></html>`)
@@ -334,7 +334,7 @@ export default function AdminVotersPage() {
     const text = await file.text()
     const parsed = parseDptCsv(text)
     if (parsed.length === 0) {
-      setToast({ open: true, variant: 'warning', title: 'CSV tidak valid', message: 'CSV kosong atau format tidak valid. Kolom wajib: nik,name' })
+      setToast({ open: true, variant: 'warning', title: 'CSV tidak valid', message: 'CSV kosong atau format tidak valid. Kolom wajib: nim,name' })
       return
     }
 
@@ -380,13 +380,13 @@ export default function AdminVotersPage() {
         const cleanedToken = String(row.token).trim()
 
         if (!cleanedNik || !cleanedName || !cleanedToken) {
-          errors.push({ nik: cleanedNik || '(empty)', message: 'NIK/Nama/Token kosong.' })
+          errors.push({ nik: cleanedNik || '(empty)', message: 'NIM/NPM/Nama/Token kosong.' })
           setImportProgress({ done: i + 1, total: importMasterList.length })
           continue
         }
 
         if (!/^[0-9]+$/.test(cleanedNik)) {
-          errors.push({ nik: cleanedNik, message: 'NIK harus berupa angka.' })
+          errors.push({ nik: cleanedNik, message: 'NIM/NPM harus berupa angka.' })
           setImportProgress({ done: i + 1, total: importMasterList.length })
           continue
         }
@@ -424,7 +424,7 @@ export default function AdminVotersPage() {
     setToast({ open: false, message: '', variant: 'error', title: '' })
     const cleanedNik = resetNik.trim()
     if (!cleanedNik) {
-      setToast({ open: true, variant: 'warning', title: 'Periksa input', message: 'NIK wajib diisi.' })
+      setToast({ open: true, variant: 'warning', title: 'Periksa input', message: 'NIM/NPM wajib diisi.' })
       return
     }
 
@@ -513,7 +513,7 @@ export default function AdminVotersPage() {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Cari NIK atau Nama..."
+            placeholder="Cari NIM/NPM atau Nama..."
             className="h-11 w-full rounded-xl border border-zinc-300 bg-white pl-10 pr-4 text-sm text-zinc-900 shadow-sm placeholder:text-zinc-400 focus:border-gov-accent focus:outline-none focus:ring-4 focus:ring-gov-accent/15"
           />
         </div>
@@ -528,7 +528,7 @@ export default function AdminVotersPage() {
           <table className="min-w-full text-sm">
             <thead className="bg-zinc-50 text-left text-xs font-semibold text-zinc-600">
               <tr>
-                <th className="px-4 py-3">NIK</th>
+                <th className="px-4 py-3">NIM/NPM</th>
                 <th className="px-4 py-3">Nama</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3 text-right">Aksi</th>
@@ -645,13 +645,13 @@ export default function AdminVotersPage() {
       >
         <div className="space-y-2 text-sm text-zinc-700">
           <div>Rekap akan diunduh dalam format CSV (Excel-friendly).</div>
-          <div className="text-xs text-zinc-500">Kolom: nik, name, has_voted</div>
+          <div className="text-xs text-zinc-500">Kolom: nim, name, has_voted</div>
         </div>
       </Modal>
 
       <Modal
         open={importOpen}
-        title="Import DPT (CSV: nik,name)"
+        title="Import DPT (CSV: nim,name)"
         onClose={() => (importing ? null : setImportOpen(false))}
         footer={
           <>
@@ -781,7 +781,7 @@ export default function AdminVotersPage() {
           </>
         }
       >
-        <div className="text-sm text-zinc-700">Masukkan NIK yang akan di-reset (has_voted = false).</div>
+        <div className="text-sm text-zinc-700">Masukkan NIM/NPM yang akan di-reset (has_voted = false).</div>
         <input
           value={resetNik}
           onChange={(e) => setResetNik(e.target.value)}
@@ -822,7 +822,7 @@ export default function AdminVotersPage() {
         <div className="space-y-3">
           <div>
             <label className="block text-sm font-medium text-zinc-700" htmlFor="v_nik">
-              NIK
+              NIM/NPM
             </label>
             <input
               id="v_nik"
