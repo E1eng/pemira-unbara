@@ -200,6 +200,78 @@ UC_SubmitVote ..> UC_WriteAudit : <<include>>
 UC_SubmitVote ..> UC_RateLimit : <<extend>>
 
 UC_AdminLogin ..> UC_AdminCheck : <<include>>
+@enduml
+```
+
+---
+
+# 2) UML Class Diagram
+
+## 2.1 Flow Membuat Class Diagram
+
+### Prinsip
+
+Karena project ini dominan **client (React) + BaaS (Supabase)**, class diagram paling “masuk akal” untuk skripsi adalah menggabungkan:
+
+- **Domain/entity** (berasal dari tabel database)
+- **Service/Controller** (logika akses database via Supabase client)
+- **UI layer** (halaman utama) *(opsional, biasanya cukup sebagai boundary, tidak perlu semua komponen)*
+
+### Langkah 1 — Buat kelas entity dari tabel
+
+Buat kelas berikut (minimal):
+
+- `Candidate`
+- `Voter`
+- `Vote`
+- `ElectionSettings`
+- `AuditLog`
+- `AdminUser`
+- `VoteRateLimit`
+
+### Langkah 2 — Tambahkan atribut sesuai kolom tabel
+
+Contoh:
+
+- `Candidate` → `id`, `name`, `vision`, `mission`, `photo_url`, `created_at`
+- `Voter` → `nim`, `name`, `access_code_hash`, `has_voted`, `created_at`
+- `Vote` → `id`, `candidate_id`, `timestamp`
+
+> Catatan penting untuk skripsi: **`Voter` tidak punya relasi langsung ke `Vote`**. Ini point “LUBER & Rahasia” (anonimitas).
+
+### Langkah 3 — Tambahkan kelas service (frontend)
+
+Agar diagram “hidup”, tambahkan minimal:
+
+- `SupabaseClient` (wrapper dari `@supabase/supabase-js`)
+- `AuthContext` (menyimpan `nim` & `accessCode` secara in-memory)
+- `VotingService` (fetch settings/candidates, submit vote)
+- `AdminService` (admin auth, manage candidates, manage voters, load audit)
+
+### Langkah 4 — Relasi & multiplicity
+
+Gunakan relasi berikut:
+
+- `Candidate` **1** --- **0..*** `Vote` (FK: `votes.candidate_id`)
+- `ElectionSettings` **1** (single row id=1) *(boleh tanpa relasi)*
+- `AdminUser` terhubung ke external `SupabaseAuthUser` *(opsional)*
+- `AuditLog` berdiri sendiri (log event)
+- `VoteRateLimit` berdiri sendiri (by `client_key`)
+
+### Langkah 5 — Tambahkan operasi penting (method)
+
+Contoh operasi yang relevan:
+
+- `VotingService.submitVote(nim, token, candidateId, userAgent)`
+- `VotingService.fetchCandidates()`
+- `VotingService.fetchElectionSettings()`
+- `AdminService.addVoter(nim, name, token)` *(via RPC)*
+- `AdminService.importVoters(csv)`
+- `AdminService.saveCandidate(...)` *(insert/update + optional upload)*
+- `AdminService.uploadCandidatePhoto(file)`
+- `AdminService.updateElectionSettings(isVotingOpen, showLiveResult)`
+
+## 2.2 Template PlantUML Class Diagram (opsional)
 
 ```plantuml
 @startuml
