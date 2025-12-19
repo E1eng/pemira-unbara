@@ -25,7 +25,7 @@ function CandidateSkeleton() {
 
 export default function VotePage() {
   const navigate = useNavigate()
-  const { nik, accessCode, logout } = useAuth()
+  const { nim, accessCode, logout } = useAuth()
 
   const [candidates, setCandidates] = useState([])
   const [loading, setLoading] = useState(true)
@@ -51,7 +51,7 @@ export default function VotePage() {
     autoCloseMs: undefined,
   })
 
-  const isAuthed = Boolean(nik && accessCode)
+  const isAuthed = Boolean(nim && accessCode)
 
   useEffect(() => {
     if (!isAuthed) {
@@ -118,12 +118,12 @@ export default function VotePage() {
     }
   }, [refreshNonce])
 
-  const nikMasked = useMemo(() => {
-    if (!nik) return ''
-    const raw = String(nik)
+  const nimMasked = useMemo(() => {
+    if (!nim) return ''
+    const raw = String(nim)
     if (raw.length <= 6) return raw
     return `${raw.slice(0, 4)}${'•'.repeat(Math.min(8, raw.length - 6))}${raw.slice(-2)}`
-  }, [nik])
+  }, [nim])
 
   const statusBadge = useMemo(() => {
     if (settingsLoading) {
@@ -213,7 +213,7 @@ export default function VotePage() {
 
   const submitVote = async () => {
     if (!selectedCandidate) return
-    if (!nik || !accessCode) {
+    if (!nim || !accessCode) {
       navigate('/login', { replace: true })
       return
     }
@@ -239,7 +239,7 @@ export default function VotePage() {
     setToast((prev) => ({ ...prev, open: false, message: '' }))
 
     const { data, error } = await supabase.rpc('submit_vote', {
-      p_nik: nik,
+      p_nim: nim,
       p_access_code_plain: accessCode,
       p_candidate_id: selectedCandidate.id,
       p_client_info: { userAgent: navigator.userAgent },

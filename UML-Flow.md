@@ -52,8 +52,8 @@ Tabel utama:
 
 RPC utama:
 
-- `admin_add_voter(p_nik, p_name, p_access_code_plain)`
-- `submit_vote(p_nik, p_access_code_plain, p_candidate_id, p_client_info)`
+- `admin_add_voter(p_nim, p_name, p_access_code_plain)`
+- `submit_vote(p_nim, p_access_code_plain, p_candidate_id, p_client_info)`
 - `get_vote_recap()`
 
 ---
@@ -234,7 +234,7 @@ Buat kelas berikut (minimal):
 Contoh:
 
 - `Candidate` → `id`, `name`, `vision`, `mission`, `photo_url`, `created_at`
-- `Voter` → `nik`, `name`, `access_code_hash`, `has_voted`, `created_at`
+- `Voter` → `nim`, `name`, `access_code_hash`, `has_voted`, `created_at`
 - `Vote` → `id`, `candidate_id`, `timestamp`
 
 > Catatan penting untuk skripsi: **`Voter` tidak punya relasi langsung ke `Vote`**. Ini point “LUBER & Rahasia” (anonimitas).
@@ -244,7 +244,7 @@ Contoh:
 Agar diagram “hidup”, tambahkan minimal:
 
 - `SupabaseClient` (wrapper dari `@supabase/supabase-js`)
-- `AuthContext` (menyimpan `nik` & `accessCode` secara in-memory)
+- `AuthContext` (menyimpan `nim` & `accessCode` secara in-memory)
 - `VotingService` (fetch settings/candidates, submit vote)
 - `AdminService` (admin auth, manage candidates, manage voters, load audit)
 
@@ -262,10 +262,10 @@ Gunakan relasi berikut:
 
 Contoh operasi yang relevan:
 
-- `VotingService.submitVote(nik, token, candidateId, userAgent)`
+- `VotingService.submitVote(nim, token, candidateId, userAgent)`
 - `VotingService.fetchCandidates()`
 - `VotingService.fetchElectionSettings()`
-- `AdminService.addVoter(nik, name, token)` *(via RPC)*
+- `AdminService.addVoter(nim, name, token)` *(via RPC)*
 - `AdminService.importVoters(csv)`
 - `AdminService.saveCandidate(...)` *(insert/update + optional upload)*
 - `AdminService.uploadCandidatePhoto(file)`
@@ -287,7 +287,7 @@ class Candidate {
 }
 
 class Voter {
-  +nik: text
+  +nim: text
   +name: text
   +access_code_hash: text
   +has_voted: boolean
@@ -398,12 +398,12 @@ Untuk skripsi, sequence yang paling “inti” adalah **Pemilih mengirim suara**
 
 ### Alur dasar (happy path)
 
-1. Pemilih login di `/login` → `AuthContext.login()` menyimpan NIM/NPM (di kode variabelnya bernama `nik`) & `accessCode`.
+1. Pemilih login di `/login` → `AuthContext.login()` menyimpan NIM/NPM (di kode variabelnya bernama `nim`) & `accessCode`.
 2. Pemilih membuka `/vote` → VotePage load settings + candidates.
 3. Pemilih klik “Pilih” → confirm modal.
 4. Pemilih klik “Kirim Suara” → VotePage re-check `election_settings.is_voting_open`.
 5. VotePage memanggil `supabase.rpc('submit_vote', ...)` dengan:
-   - `p_nik`
+   - `p_nim`
    - `p_access_code_plain`
    - `p_candidate_id`
    - `p_client_info.userAgent`
@@ -411,7 +411,7 @@ Untuk skripsi, sequence yang paling “inti” adalah **Pemilih mengirim suara**
    - cek voting open
    - derive `client_key` (IP + UA)
    - cek blocked / rate limit
-   - load voter by `nik` (FOR UPDATE)
+   - load voter by `nim` (FOR UPDATE)
    - validate token (bcrypt)
    - check `has_voted`
    - set `has_voted=true`
@@ -441,8 +441,8 @@ participant "RPC submit_vote" as RPC
 database "PostgreSQL" as DB
 
 Pemilih -> UI: Buka /login, input NIM/NPM + Token
-UI -> Auth: login(nik, token)
-Auth --> UI: OK (nik & token tersimpan in-memory)
+UI -> Auth: login(nim, token)
+Auth --> UI: OK (nim & token tersimpan in-memory)
 
 Pemilih -> UI: Buka /vote
 UI -> SB: select election_settings
@@ -451,7 +451,7 @@ UI -> SB: select candidates
 SB --> UI: daftar kandidat
 
 Pemilih -> UI: Pilih kandidat + konfirmasi
-UI -> SB: rpc submit_vote(p_nik, p_access_code_plain, p_candidate_id, p_client_info)
+UI -> SB: rpc submit_vote(p_nim, p_access_code_plain, p_candidate_id, p_client_info)
 SB -> RPC: execute function
 
 RPC -> DB: read election_settings(id=1)
@@ -467,7 +467,7 @@ else voting open
     SB --> UI: error
     UI --> Pemilih: tampilkan pesan rate limit
   else not blocked
-    RPC -> DB: select voters where nik = p_nik FOR UPDATE
+    RPC -> DB: select voters where nim = p_nim FOR UPDATE
     alt NIM/NPM tidak ditemukan
       RPC -> DB: upsert vote_rate_limits (increment fail_count)
       RPC -> DB: insert audit_logs(LOGIN_FAIL)

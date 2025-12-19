@@ -23,8 +23,8 @@ export function friendlyError(err, fallback) {
     return 'Pemungutan suara sedang ditutup.'
   }
 
-  if (lower.includes('nik tidak terdaftar')) {
-    return 'NIK tidak terdaftar dalam DPT.'
+  if (lower.includes('nim tidak terdaftar')) {
+    return 'NIM tidak terdaftar dalam DPT.'
   }
 
   if (lower.includes('kode akses salah') || lower.includes('wrong token') || lower.includes('wrong code')) {
@@ -32,7 +32,7 @@ export function friendlyError(err, fallback) {
   }
 
   if (lower.includes('sudah digunakan') || lower.includes('already voted')) {
-    return 'NIK ini sudah digunakan untuk memilih.'
+    return 'NIM ini sudah digunakan untuk memilih.'
   }
 
   if (rawMessage) return rawMessage

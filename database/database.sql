@@ -28,9 +28,9 @@ create table if not exists candidates (
 );
 
 -- B. TABEL PEMILIH (DPT - Daftar Pemilih Tetap)
--- SANGAT RAHASIA. Berisi NIK dan Hash Kode Akses.
+-- SANGAT RAHASIA. Berisi NIM dan Hash Kode Akses.
 create table if not exists voters (
-  nik text primary key, -- NIK jadi Primary Key biar gak ada data ganda
+  nim text primary key, -- NIM jadi Primary Key biar gak ada data ganda
   name text not null,
   access_code_hash text not null, -- Kita simpan HASH-nya, bukan kode aslinya!
   has_voted boolean default false not null, -- Indikator status memilih
@@ -49,7 +49,7 @@ create index if not exists vote_rate_limits_blocked_until_idx
 on vote_rate_limits (blocked_until);
 
 -- C. TABEL SUARA (VOTES)
--- ANONIM. Tidak ada kolom 'nik' atau 'user_id' disini. (LUBER)
+-- ANONIM. Tidak ada kolom 'nim' atau 'user_id' disini. (LUBER)
 create table if not exists votes (
   id uuid default gen_random_uuid() primary key,
   candidate_id bigint references candidates(id) on delete cascade not null,
@@ -200,7 +200,7 @@ with check (true);
 -- FUNGSI 1: IMPORT DPT (Dipakai Admin/Panitia)
 -- Fungsi ini otomatis meng-hash kode akses sebelum disimpan ke DB.
 create or replace function admin_add_voter(
-  p_nik text,
+  p_nim text,
   p_name text,
   p_access_code_plain text -- Kode asli (misal: "X7K9L")
 ) returns void as $$
@@ -209,22 +209,22 @@ begin
     raise exception 'Unauthorized';
   end if;
 
-  insert into voters (nik, name, access_code_hash)
+  insert into voters (nim, name, access_code_hash)
   values (
-    p_nik, 
+    p_nim, 
     p_name, 
     crypt(p_access_code_plain, gen_salt('bf')) -- Enkripsi pakai BCrypt
   );
 
   insert into audit_logs (action, details)
-  values ('ADMIN_ACTION', jsonb_build_object('action', 'ADD_VOTER', 'nik', p_nik));
+  values ('ADMIN_ACTION', jsonb_build_object('action', 'ADD_VOTER', 'nim', p_nim));
 end;
 $$ language plpgsql security definer set search_path = public;
 
 -- FUNGSI 2: CORE VOTING MECHANISM (Jantung Aplikasi)
 -- Fungsi ini menangani: Validasi, Cek Double Vote, dan Insert Suara dalam 1 Transaksi.
 create or replace function submit_vote(
-  p_nik text,
+  p_nim text,
   p_access_code_plain text,
   p_candidate_id bigint,
   p_client_info jsonb -- Data IP/Browser dari frontend
@@ -245,7 +245,7 @@ begin
   select * into v_settings from election_settings where id = 1;
   if not found or v_settings.is_voting_open is distinct from true then
     insert into audit_logs (action, details)
-    values ('LOGIN_FAIL', p_client_info || jsonb_build_object('reason', 'Voting closed', 'nik', p_nik));
+    values ('LOGIN_FAIL', p_client_info || jsonb_build_object('reason', 'Voting closed', 'nim', p_nim));
     raise exception 'Pemungutan suara sedang ditutup.';
   end if;
 
@@ -267,15 +267,15 @@ begin
     insert into audit_logs (action, details)
     values (
       'LOGIN_FAIL',
-      p_client_info || jsonb_build_object('reason', 'Rate limited', 'nik', p_nik, 'client_key', v_client_key, 'blocked_until', v_rate.blocked_until)
+      p_client_info || jsonb_build_object('reason', 'Rate limited', 'nim', p_nim, 'client_key', v_client_key, 'blocked_until', v_rate.blocked_until)
     );
     raise exception 'Terlalu banyak percobaan dari jaringan Anda. Silakan tunggu beberapa menit lalu coba lagi.';
   end if;
 
-  -- 1. Cari data voter berdasarkan NIK
-  select * into v_voter from voters where nik = p_nik for update;
+  -- 1. Cari data voter berdasarkan NIM
+  select * into v_voter from voters where nim = p_nim for update;
 
-  -- 2. Validasi: Apakah NIK ada?
+  -- 2. Validasi: Apakah NIM ada?
   if not found then
     if exists (select 1 from vote_rate_limits where client_key = v_client_key) then
       update vote_rate_limits
@@ -304,8 +304,8 @@ begin
       where client_key = v_client_key;
     end if;
 
-    insert into audit_logs (action, details) values ('LOGIN_FAIL', p_client_info || jsonb_build_object('reason', 'NIK not found', 'nik', p_nik));
-    raise exception 'NIK tidak terdaftar dalam DPT.';
+    insert into audit_logs (action, details) values ('LOGIN_FAIL', p_client_info || jsonb_build_object('reason', 'NIM not found', 'nim', p_nim));
+    raise exception 'NIM tidak terdaftar dalam DPT.';
   end if;
 
   -- 3. Validasi: Apakah Password/Token Benar? (Cek Hash)
@@ -339,27 +339,27 @@ begin
       insert into audit_logs (action, details)
       values (
         'LOGIN_FAIL',
-        p_client_info || jsonb_build_object('reason', 'Rate limit triggered', 'nik', p_nik, 'fail_count', v_fail_count, 'client_key', v_client_key)
+        p_client_info || jsonb_build_object('reason', 'Rate limit triggered', 'nim', p_nim, 'fail_count', v_fail_count, 'client_key', v_client_key)
       );
 
       raise exception 'Terlalu banyak percobaan dari jaringan Anda. Silakan tunggu beberapa menit lalu coba lagi.';
     end if;
 
-    insert into audit_logs (action, details) values ('LOGIN_FAIL', p_client_info || jsonb_build_object('reason', 'Wrong Token', 'nik', p_nik));
+    insert into audit_logs (action, details) values ('LOGIN_FAIL', p_client_info || jsonb_build_object('reason', 'Wrong Token', 'nim', p_nim));
     raise exception 'Kode Akses salah. Silakan cek surat undangan.';
   end if;
 
   -- 4. Validasi: Apakah Sudah Memilih? (Cegah Double Voting)
   if v_voter.has_voted then
-    insert into audit_logs (action, details) values ('LOGIN_FAIL', p_client_info || jsonb_build_object('reason', 'Already Voted', 'nik', p_nik));
-    raise exception 'Maaf, NIK ini sudah digunakan untuk memilih.';
+    insert into audit_logs (action, details) values ('LOGIN_FAIL', p_client_info || jsonb_build_object('reason', 'Already Voted', 'nim', p_nim));
+    raise exception 'Maaf, NIM ini sudah digunakan untuk memilih.';
   end if;
 
   -- 5. EKSEKUSI (Jika semua lolos)
   delete from vote_rate_limits where client_key = v_client_key;
 
   -- Update status pemilih
-  update voters set has_voted = true where nik = p_nik;
+  update voters set has_voted = true where nim = p_nim;
   
   -- Masukkan suara (Tanpa identitas pemilih)
   insert into votes (candidate_id) values (p_candidate_id);
@@ -411,11 +411,11 @@ where not exists (
   select 1 from candidates c where c.name = v.name
 );
 
--- Masukkan 1 Pemilih Contoh (NIK: 12345, Kode: RAHASIA)
+-- Masukkan 1 Pemilih Contoh (NIM: 22351001, Kode: RAHASIA)
 -- Kita pakai fungsi admin_add_voter biar otomatis di-hash
 do $$
 begin
-  perform admin_add_voter('12345', 'Ujang Test', 'RAHASIA');
+  perform admin_add_voter('22351001', 'Mahasiswa Test', 'RAHASIA');
 exception
   when others then null;
 end $$;

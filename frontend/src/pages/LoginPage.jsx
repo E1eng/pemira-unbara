@@ -7,7 +7,7 @@ export default function LoginPage() {
   const navigate = useNavigate()
   const { login } = useAuth()
 
-  const [nik, setNik] = useState('')
+  const [nim, setNim] = useState('')
   const [accessCode, setAccessCode] = useState('')
   const [error, setError] = useState(null)
 
@@ -15,13 +15,13 @@ export default function LoginPage() {
     e.preventDefault()
     setError(null)
 
-    if (!nik.trim() || !accessCode.trim()) {
+    if (!nim.trim() || !accessCode.trim()) {
       setError('NIM/NPM dan Kode Akses wajib diisi.')
       return
     }
 
     try {
-      login(nik, accessCode)
+      login(nim, accessCode)
       navigate('/vote', { replace: true })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Gagal masuk. Silakan coba lagi.')
@@ -46,14 +46,14 @@ export default function LoginPage() {
 
             <form onSubmit={onSubmit} className="mt-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-zinc-700" htmlFor="nik">
+                <label className="block text-sm font-medium text-zinc-700" htmlFor="nim">
                   NIM/NPM
                 </label>
                 <input
-                  id="nik"
-                  name="nik"
-                  value={nik}
-                  onChange={(e) => setNik(e.target.value)}
+                  id="nim"
+                  name="nim"
+                  value={nim}
+                  onChange={(e) => setNim(e.target.value)}
                   inputMode="numeric"
                   autoComplete="off"
                   placeholder="Contoh: 2235xxxx..."

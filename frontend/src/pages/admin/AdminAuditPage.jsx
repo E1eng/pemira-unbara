@@ -66,7 +66,7 @@ export default function AdminAuditPage() {
         reason: details.reason,
         ip: details.ip,
         userAgent: details.userAgent,
-        nik: details.nik,
+        nim: details.nim,
       }
     })
   }, [logs])
@@ -116,7 +116,7 @@ export default function AdminAuditPage() {
                     <td className="px-4 py-3 whitespace-nowrap font-mono text-xs text-zinc-700">{r.time}</td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <div className="font-semibold text-gov-blue">{r.action}</div>
-                      {r.nik ? <div className="text-xs text-zinc-500">NIM/NPM: {r.nik}</div> : null}
+                      {r.nim ? <div className="text-xs text-zinc-500">NIM/NPM: {r.nim}</div> : null}
                     </td>
                     <td className="px-4 py-3">
                       <div className="text-xs text-zinc-700">

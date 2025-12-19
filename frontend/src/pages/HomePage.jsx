@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { supabase } from '../lib/supabaseClient.js'
 
 export default function HomePage() {
-  const { nik, isAuthenticated, logout } = useAuth()
+  const { nim, isAuthenticated, logout } = useAuth()
   const [settings, setSettings] = useState(null)
 
   useEffect(() => {
@@ -60,7 +60,7 @@ export default function HomePage() {
 
                 {isAuthenticated ? (
                   <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
-                    NIM/NPM aktif: <span className="font-mono font-semibold">{nik}</span>
+                    NIM/NPM aktif: <span className="font-mono font-semibold">{nim}</span>
                   </div>
                 ) : (
                   <div className="mt-3 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-700">

@@ -68,7 +68,7 @@ Data kandidat.
 
 Daftar Pemilih Tetap (DPT).
 
-- `nik` (PK) *(di konteks BEM, kolom ini dipakai untuk menyimpan NIM/NPM)*
+- `nim` (PK) *(di konteks BEM, kolom ini dipakai untuk menyimpan NIM/NPM)*
 - `name`
 - `access_code_hash` (bcrypt)
 - `has_voted`
@@ -79,7 +79,7 @@ Daftar Pemilih Tetap (DPT).
 
 Penyimpanan suara **anonim**.
 
-- Tidak ada `nik` / user identity (tidak ada data NIM/NPM di tabel ini)
+- Tidak ada `nim` / user identity (tidak ada data NIM/NPM di tabel ini)
 - Hanya menyimpan `candidate_id` + timestamp
 
 ### `audit_logs`
@@ -137,13 +137,13 @@ Ringkasan:
 
 ## RPC Functions
 
-### `admin_add_voter(p_nik, p_name, p_access_code_plain)`
+### `admin_add_voter(p_nim, p_name, p_access_code_plain)`
 
 - Hanya admin (`is_admin()`) yang boleh menjalankan
 - Menyimpan token sebagai **hash bcrypt** (`crypt(..., gen_salt('bf'))`)
 - Menulis audit `ADMIN_ACTION`
 
-### `submit_vote(p_nik, p_access_code_plain, p_candidate_id, p_client_info)`
+### `submit_vote(p_nim, p_access_code_plain, p_candidate_id, p_client_info)`
 
 Fungsi paling kritikal.
 

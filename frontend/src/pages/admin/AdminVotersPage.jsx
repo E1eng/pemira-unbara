@@ -26,15 +26,15 @@ export default function AdminVotersPage() {
   const [importErrors, setImportErrors] = useState([])
   const [importMasterList, setImportMasterList] = useState([])
 
-  const [deletingNik, setDeletingNik] = useState(null)
-  const [resetNik, setResetNik] = useState('')
+  const [deletingNim, setDeletingNim] = useState(null)
+  const [resetNim, setResetNim] = useState('')
 
-  const [nik, setNik] = useState('')
+  const [nim, setNim] = useState('')
   const [name, setName] = useState('')
   const [token, setToken] = useState('')
 
   const resetForm = () => {
-    setNik('')
+    setNim('')
     setName('')
     setToken('')
   }
@@ -43,7 +43,7 @@ export default function AdminVotersPage() {
     setLoading(true)
     const { data, error } = await supabase
       .from('voters')
-      .select('nik, name, has_voted, created_at')
+      .select('nim, name, has_voted, created_at')
       .order('created_at', { ascending: false })
 
     if (error) {
@@ -64,16 +64,16 @@ export default function AdminVotersPage() {
   const addVoter = async () => {
     setToast({ open: false, message: '', variant: 'error', title: '' })
 
-    const cleanedNik = nik.trim()
+    const cleanedNim = nim.trim()
     const cleanedName = name.trim()
     const cleanedToken = token.trim()
 
-    if (!cleanedNik || !cleanedName || !cleanedToken) {
+    if (!cleanedNim || !cleanedName || !cleanedToken) {
       setToast({ open: true, variant: 'warning', title: 'Periksa input', message: 'NIM/NPM, Nama, dan Token wajib diisi.' })
       return
     }
 
-    if (!/^[0-9]+$/.test(cleanedNik)) {
+    if (!/^[0-9]+$/.test(cleanedNim)) {
       setToast({ open: true, variant: 'warning', title: 'Periksa input', message: 'NIM/NPM harus berupa angka.' })
       return
     }
@@ -82,7 +82,7 @@ export default function AdminVotersPage() {
 
     // CRITICAL: use RPC so token gets hashed
     const { error } = await supabase.rpc('admin_add_voter', {
-      p_nik: cleanedNik,
+      p_nim: cleanedNim,
       p_name: cleanedName,
       p_access_code_plain: cleanedToken,
     })
@@ -101,10 +101,10 @@ export default function AdminVotersPage() {
   }
 
   const deleteVoter = async () => {
-    if (!deletingNik) return
+    if (!deletingNim) return
 
     setSubmitting(true)
-    const { error } = await supabase.from('voters').delete().eq('nik', deletingNik)
+    const { error } = await supabase.from('voters').delete().eq('nim', deletingNim)
 
     if (error) {
       setSubmitting(false)
@@ -114,7 +114,7 @@ export default function AdminVotersPage() {
 
     setSubmitting(false)
     setDeleteOpen(false)
-    setDeletingNik(null)
+    setDeletingNim(null)
     setToast({ open: true, variant: 'success', title: 'Berhasil', message: 'Pemilih berhasil dihapus.' })
     refresh()
   }
@@ -122,7 +122,7 @@ export default function AdminVotersPage() {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
     if (!q) return voters
-    return voters.filter((v) => String(v.nik).includes(q) || String(v.name ?? '').toLowerCase().includes(q))
+    return voters.filter((v) => String(v.nim).includes(q) || String(v.name ?? '').toLowerCase().includes(q))
   }, [query, voters])
 
   useEffect(() => {
@@ -171,10 +171,10 @@ export default function AdminVotersPage() {
     for (let i = startIndex; i < rawLines.length; i += 1) {
       const parts = rawLines[i].split(delimiter).map((p) => p.trim())
       if (parts.length < 2) continue
-      const rowNik = parts[0]
+      const rowNim = parts[0]
       const rowName = parts.slice(1).join(delimiter).trim()
-      if (!rowNik || !rowName) continue
-      rows.push({ nik: rowNik, name: rowName })
+      if (!rowNim || !rowName) continue
+      rows.push({ nim: rowNim, name: rowName })
     }
 
     return rows
@@ -192,7 +192,7 @@ export default function AdminVotersPage() {
     const header = ['Name', 'NIM/NPM', 'Token']
     const lines = [header.join(',')]
     rows.forEach((r) => {
-      lines.push([escape(r.name), escape(r.nik), escape(r.token)].join(','))
+      lines.push([escape(r.name), escape(r.nim), escape(r.token)].join(','))
     })
     return lines.join('\n')
   }
@@ -209,7 +209,7 @@ export default function AdminVotersPage() {
     const header = ['nim', 'name', 'has_voted']
     const lines = [header.join(',')]
     rows.forEach((r) => {
-      lines.push([escape(r.nik), escape(r.name), escape(r.has_voted)].join(','))
+      lines.push([escape(r.nim), escape(r.name), escape(r.has_voted)].join(','))
     })
     return lines.join('\n')
   }
@@ -218,7 +218,7 @@ export default function AdminVotersPage() {
     setToast({ open: false, message: '', variant: 'error', title: '' })
     setExporting(true)
 
-    let q = supabase.from('voters').select('nik, name, has_voted').order('created_at', { ascending: false })
+    let q = supabase.from('voters').select('nim, name, has_voted').order('created_at', { ascending: false })
     if (onlyVoted) q = q.eq('has_voted', true)
 
     const { data, error } = await q
@@ -294,7 +294,7 @@ export default function AdminVotersPage() {
     const rowsHtml = importMasterList
       .map(
         (r, idx) =>
-          `<tr><td>${idx + 1}</td><td>${String(r.name)}</td><td>${String(r.nik)}</td><td style="font-family:monospace;font-weight:700;letter-spacing:0.06em;">${String(r.token)}</td></tr>`,
+          `<tr><td>${idx + 1}</td><td>${String(r.name)}</td><td>${String(r.nim)}</td><td style="font-family:monospace;font-weight:700;letter-spacing:0.06em;">${String(r.token)}</td></tr>`,
       )
       .join('')
 
@@ -349,9 +349,9 @@ export default function AdminVotersPage() {
         let t = generateSecureToken(6)
         while (used.has(t)) t = generateSecureToken(6)
         used.add(t)
-        return { nik: String(r.nik).trim(), name: String(r.name).trim(), token: t }
+        return { nim: String(r.nim).trim(), name: String(r.name).trim(), token: t }
       })
-      .filter((r) => r.nik && r.name)
+      .filter((r) => r.nim && r.name)
 
     setImportMasterList(prepared)
     setToast({ open: true, variant: 'info', title: 'Siap import', message: `File dibaca. ${prepared.length} baris siap diimport.` })
@@ -375,32 +375,32 @@ export default function AdminVotersPage() {
     try {
       for (let i = 0; i < importMasterList.length; i += 1) {
         const row = importMasterList[i]
-        const cleanedNik = String(row.nik).trim()
+        const cleanedNim = String(row.nim).trim()
         const cleanedName = String(row.name).trim()
         const cleanedToken = String(row.token).trim()
 
-        if (!cleanedNik || !cleanedName || !cleanedToken) {
-          errors.push({ nik: cleanedNik || '(empty)', message: 'NIM/NPM/Nama/Token kosong.' })
+        if (!cleanedNim || !cleanedName || !cleanedToken) {
+          errors.push({ nim: cleanedNim || '(empty)', message: 'NIM/NPM/Nama/Token kosong.' })
           setImportProgress({ done: i + 1, total: importMasterList.length })
           continue
         }
 
-        if (!/^[0-9]+$/.test(cleanedNik)) {
-          errors.push({ nik: cleanedNik, message: 'NIM/NPM harus berupa angka.' })
+        if (!/^[0-9]+$/.test(cleanedNim)) {
+          errors.push({ nim: cleanedNim, message: 'NIM/NPM harus berupa angka.' })
           setImportProgress({ done: i + 1, total: importMasterList.length })
           continue
         }
 
         const { error } = await supabase.rpc('admin_add_voter', {
-          p_nik: cleanedNik,
+          p_nim: cleanedNim,
           p_name: cleanedName,
           p_access_code_plain: cleanedToken,
         })
 
         if (error) {
-          errors.push({ nik: cleanedNik, message: friendlyError(error) })
+          errors.push({ nim: cleanedNim, message: friendlyError(error) })
         } else {
-          success.push({ nik: cleanedNik, name: cleanedName, token: cleanedToken })
+          success.push({ nim: cleanedNim, name: cleanedName, token: cleanedToken })
         }
 
         setImportProgress({ done: i + 1, total: importMasterList.length })
@@ -422,14 +422,14 @@ export default function AdminVotersPage() {
 
   const resetVoteStatus = async () => {
     setToast({ open: false, message: '', variant: 'error', title: '' })
-    const cleanedNik = resetNik.trim()
-    if (!cleanedNik) {
+    const cleanedNim = resetNim.trim()
+    if (!cleanedNim) {
       setToast({ open: true, variant: 'warning', title: 'Periksa input', message: 'NIM/NPM wajib diisi.' })
       return
     }
 
     setSubmitting(true)
-    const { error } = await supabase.from('voters').update({ has_voted: false }).eq('nik', cleanedNik)
+    const { error } = await supabase.from('voters').update({ has_voted: false }).eq('nim', cleanedNim)
     if (error) {
       setSubmitting(false)
       setToast({ open: true, variant: 'error', title: 'Gagal reset status', message: friendlyError(error) })
@@ -438,7 +438,7 @@ export default function AdminVotersPage() {
 
     setSubmitting(false)
     setResetOpen(false)
-    setResetNik('')
+    setResetNim('')
     setToast({ open: true, variant: 'success', title: 'Berhasil', message: 'Status memilih berhasil di-reset.' })
     refresh()
   }
@@ -549,8 +549,8 @@ export default function AdminVotersPage() {
                 </tr>
               ) : (
                 pageItems.map((v) => (
-                  <tr key={v.nik} className="hover:bg-zinc-50">
-                    <td className="px-4 py-3 font-mono text-xs text-zinc-700">{v.nik}</td>
+                  <tr key={v.nim} className="hover:bg-zinc-50">
+                    <td className="px-4 py-3 font-mono text-xs text-zinc-700">{v.nim}</td>
                     <td className="px-4 py-3">
                       <div className="font-semibold text-gov-blue">{v.name}</div>
                     </td>
@@ -570,7 +570,7 @@ export default function AdminVotersPage() {
                         <button
                           type="button"
                           onClick={() => {
-                            setDeletingNik(v.nik)
+                            setDeletingNim(v.nim)
                             setDeleteOpen(true)
                           }}
                           className="inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-3 text-xs font-semibold text-red-700 hover:bg-red-50"
@@ -718,8 +718,8 @@ export default function AdminVotersPage() {
               Gagal import: {importErrors.length} baris.
               <div className="mt-2 max-h-32 overflow-auto text-xs">
                 {importErrors.slice(0, 10).map((e) => (
-                  <div key={e.nik}>
-                    {e.nik}: {e.message}
+                  <div key={e.nim}>
+                    {e.nim}: {e.message}
                   </div>
                 ))}
                 {importErrors.length > 10 ? <div>...</div> : null}
@@ -783,8 +783,8 @@ export default function AdminVotersPage() {
       >
         <div className="text-sm text-zinc-700">Masukkan NIM/NPM yang akan di-reset (has_voted = false).</div>
         <input
-          value={resetNik}
-          onChange={(e) => setResetNik(e.target.value)}
+          value={resetNim}
+          onChange={(e) => setResetNim(e.target.value)}
           inputMode="numeric"
           autoComplete="off"
           className="mt-3 h-11 w-full rounded-xl border border-zinc-300 bg-white px-4 text-sm text-zinc-900 shadow-sm focus:border-gov-accent focus:outline-none focus:ring-4 focus:ring-gov-accent/15"
@@ -821,13 +821,13 @@ export default function AdminVotersPage() {
       >
         <div className="space-y-3">
           <div>
-            <label className="block text-sm font-medium text-zinc-700" htmlFor="v_nik">
+            <label className="block text-sm font-medium text-zinc-700" htmlFor="v_nim">
               NIM/NPM
             </label>
             <input
-              id="v_nik"
-              value={nik}
-              onChange={(e) => setNik(e.target.value)}
+              id="v_nim"
+              value={nim}
+              onChange={(e) => setNim(e.target.value)}
               inputMode="numeric"
               autoComplete="off"
               className="mt-2 h-11 w-full rounded-xl border border-zinc-300 bg-white px-4 text-sm text-zinc-900 shadow-sm focus:border-gov-accent focus:outline-none focus:ring-4 focus:ring-gov-accent/15"
@@ -887,7 +887,7 @@ export default function AdminVotersPage() {
           </>
         }
       >
-        <div className="text-sm text-zinc-700">Anda yakin menghapus pemilih NIK {deletingNik}?</div>
+        <div className="text-sm text-zinc-700">Anda yakin menghapus pemilih NIM {deletingNim}?</div>
       </Modal>
     </>
   )

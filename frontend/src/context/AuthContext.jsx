@@ -3,38 +3,38 @@ import { createContext, useContext, useMemo, useState } from 'react'
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
-  const [nik, setNik] = useState(null)
+  const [nim, setNim] = useState(null)
   const [accessCode, setAccessCode] = useState(null)
 
-  const login = (rawNik, rawCode) => {
-    const cleanedNik = String(rawNik ?? '').trim()
+  const login = (rawNim, rawCode) => {
+    const cleanedNim = String(rawNim ?? '').trim()
     const cleanedCode = String(rawCode ?? '').trim()
 
-    if (!cleanedNik) throw new Error('NIM/NPM wajib diisi.')
-    if (!/^[0-9]+$/.test(cleanedNik)) throw new Error('NIM/NPM harus berupa angka.')
-    if (cleanedNik.length < 5 || cleanedNik.length > 20) throw new Error('Format NIM/NPM tidak valid.')
+    if (!cleanedNim) throw new Error('NIM/NPM wajib diisi.')
+    if (!/^[0-9]+$/.test(cleanedNim)) throw new Error('NIM/NPM harus berupa angka.')
+    if (cleanedNim.length < 5 || cleanedNim.length > 20) throw new Error('Format NIM/NPM tidak valid.')
 
     if (!cleanedCode) throw new Error('Kode Akses wajib diisi.')
     if (cleanedCode.length < 4 || cleanedCode.length > 32) throw new Error('Format Kode Akses tidak valid.')
 
-    setNik(cleanedNik)
+    setNim(cleanedNim)
     setAccessCode(cleanedCode)
   }
 
   const logout = () => {
-    setNik(null)
+    setNim(null)
     setAccessCode(null)
   }
 
   const value = useMemo(
     () => ({
-      nik,
+      nim,
       accessCode,
-      isAuthenticated: Boolean(nik && accessCode),
+      isAuthenticated: Boolean(nim && accessCode),
       login,
       logout,
     }),
-    [nik, accessCode],
+    [nim, accessCode],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
