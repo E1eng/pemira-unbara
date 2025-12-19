@@ -129,7 +129,7 @@ Contoh yang cocok untuk project ini:
 
 > Ini template siap pakai. Kalau kamu tidak mau “auto-generate”, gunakan ini sebagai referensi elemen.
 
-plantuml
+```plantuml
 @startuml
 left to right direction
 skinparam packageStyle rectangle
@@ -201,6 +201,7 @@ UC_SubmitVote ..> UC_RateLimit : <<extend>>
 
 UC_AdminLogin ..> UC_AdminCheck : <<include>>
 @enduml
+```
 
 ---
 
