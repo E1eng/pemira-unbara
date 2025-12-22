@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { AuroraBackground } from '../components/ui/aurora-background.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { supabase } from '../lib/supabaseClient.js'
 import { ArrowLeft, Eye, EyeOff, Shield, User, Key } from 'lucide-react'
-import { AuroraBackground } from '../components/ui/aurora-background.jsx'
 import { cn } from '../lib/utils.js'
 
 export default function LoginPage() {

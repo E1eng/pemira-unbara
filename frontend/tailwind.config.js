@@ -22,9 +22,14 @@ export default {
         },
       },
       colors: {
-        'gov-blue': '#0f172a',
-        'gov-accent': '#2563eb',
-        'gov-bg': '#f8fafc',
+        'gov-blue': '#18181b', // Zinc-950 (Deep Void)
+        'gov-accent': '#6366f1', // Indigo-500 (Electric Indigo)
+        'gov-bg': '#fafafa', // Zinc-50 (Clean Surface)
+        'gov-text': '#52525b', // Zinc-600 (Body Text)
+        'gov-muted': '#a1a1aa', // Zinc-400 (Muted Text)
+      },
+      fontFamily: {
+        sans: ['Inter', 'system-ui', 'sans-serif'],
       },
     },
   },

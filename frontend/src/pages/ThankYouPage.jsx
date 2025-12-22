@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { CheckCircle2, Home, Shield, Clock, ArrowRight } from 'lucide-react'
 import Layout from '../components/Layout.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
+import confetti from 'canvas-confetti'
 
 export default function ThankYouPage() {
   const navigate = useNavigate()
@@ -10,8 +11,24 @@ export default function ThankYouPage() {
   const [countdown, setCountdown] = useState(5)
 
   useEffect(() => {
+    // Trigger confetti
+    const duration = 3 * 1000
+    const animationEnd = Date.now() + duration
+    const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 }
+
+    const randomInRange = (min, max) => Math.random() * (max - min) + min
+
+    const interval = setInterval(function () {
+      const timeLeft = animationEnd - Date.now()
+      if (timeLeft <= 0) return clearInterval(interval)
+
+      const particleCount = 50 * (timeLeft / duration)
+      confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } })
+      confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } })
+    }, 250)
+
     logout()
-    
+
     const countdownInterval = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
@@ -24,6 +41,7 @@ export default function ThankYouPage() {
     }, 1000)
 
     return () => {
+      clearInterval(interval)
       clearInterval(countdownInterval)
     }
   }, [logout, navigate])
@@ -43,7 +61,7 @@ export default function ThankYouPage() {
               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 sm:h-20 sm:w-20">
                 <CheckCircle2 className="h-8 w-8 sm:h-10 sm:w-10" />
               </div>
-              
+
               <h1 className="mt-4 text-xl font-bold tracking-tight text-gov-blue sm:text-2xl">Terima Kasih!</h1>
               <p className="mt-2 text-sm text-zinc-600 sm:text-base">
                 Suara Anda telah berhasil direkam. Terima kasih telah berpartisipasi dalam pemilihan Ketua BEM.

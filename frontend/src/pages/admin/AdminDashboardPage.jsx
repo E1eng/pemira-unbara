@@ -267,27 +267,46 @@ export default function AdminDashboardPage() {
       </div>
 
       <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-4">
-        <StatCard icon={Users} label="Total DPT" value={initialLoading && dptCount == null ? '…' : dptCount ?? '—'} sub="Jumlah pemilih terdaftar" />
-        <StatCard
-          icon={CheckCircle2}
-          label="Suara Masuk"
-          value={initialLoading && effectiveVoteCount == null ? '…' : effectiveVoteCount ?? totalFromRecap ?? '—'}
-          sub="Jumlah suara tercatat"
-          tone="success"
-        />
-        <StatCard
-          icon={Activity}
-          label="Partisipasi"
-          value={initialLoading && participation == null ? '…' : participation != null ? `${participation}%` : '—'}
-          sub="Suara / DPT"
-        />
-        <StatCard
-          icon={ShieldAlert}
-          label="Status Voting"
-          value={settingsLoading ? '…' : isVotingOpen ? 'OPEN' : 'CLOSED'}
-          sub="Akses pemilih"
-          tone={statusTone}
-        />
+        {initialLoading ? (
+          <>
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm animate-pulse">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1">
+                    <div className="h-4 w-20 rounded bg-zinc-200"></div>
+                    <div className="mt-2 h-8 w-16 rounded bg-zinc-200"></div>
+                  </div>
+                  <div className="h-10 w-10 rounded-2xl bg-zinc-100"></div>
+                </div>
+                <div className="mt-2 h-3 w-32 rounded bg-zinc-100"></div>
+              </div>
+            ))}
+          </>
+        ) : (
+          <>
+            <StatCard icon={Users} label="Total DPT" value={dptCount ?? '—'} sub="Jumlah pemilih terdaftar" />
+            <StatCard
+              icon={CheckCircle2}
+              label="Suara Masuk"
+              value={effectiveVoteCount ?? totalFromRecap ?? '—'}
+              sub="Jumlah suara tercatat"
+              tone="success"
+            />
+            <StatCard
+              icon={Activity}
+              label="Partisipasi"
+              value={participation != null ? `${participation}%` : '—'}
+              sub="Suara / DPT"
+            />
+            <StatCard
+              icon={ShieldAlert}
+              label="Status Voting"
+              value={isVotingOpen ? 'OPEN' : 'CLOSED'}
+              sub="Akses pemilih"
+              tone={statusTone}
+            />
+          </>
+        )}
       </div>
 
       <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
@@ -352,7 +371,9 @@ export default function AdminDashboardPage() {
           <div className="mt-1 text-sm text-zinc-600">Bar Chart (Realtime)</div>
 
           <div className="mt-4 h-72">
-            {chartData.length === 0 ? (
+            {initialLoading ? (
+              <div className="h-full w-full animate-pulse rounded-xl bg-zinc-100"></div>
+            ) : chartData.length === 0 ? (
               <div className="flex h-full items-center justify-center text-sm text-zinc-500">Belum ada data.</div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
@@ -373,7 +394,15 @@ export default function AdminDashboardPage() {
           <div className="mt-1 text-sm text-zinc-600">Sudah vs Belum memilih</div>
 
           <div className="mt-4 h-72">
-            {pieData.length === 0 ? (
+            {initialLoading ? (
+              <div className="flex h-full flex-col items-center justify-center gap-4 animate-pulse">
+                <div className="h-40 w-40 rounded-full bg-zinc-100"></div>
+                <div className="w-full space-y-2">
+                  <div className="h-4 w-full rounded bg-zinc-100"></div>
+                  <div className="h-4 w-full rounded bg-zinc-100"></div>
+                </div>
+              </div>
+            ) : pieData.length === 0 ? (
               <div className="flex h-full items-center justify-center text-sm text-zinc-500">Belum ada data.</div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
@@ -389,17 +418,19 @@ export default function AdminDashboardPage() {
             )}
           </div>
 
-          <div className="mt-3 space-y-2">
-            {pieData.map((p) => (
-              <div key={p.name} className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2">
-                  <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: p.color }} />
-                  <span className="text-zinc-700">{p.name}</span>
+          {!initialLoading && pieData.length > 0 && (
+            <div className="mt-3 space-y-2">
+              {pieData.map((p) => (
+                <div key={p.name} className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: p.color }} />
+                    <span className="text-zinc-700">{p.name}</span>
+                  </div>
+                  <div className="font-semibold text-gov-blue">{p.value}</div>
                 </div>
-                <div className="font-semibold text-gov-blue">{p.value}</div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

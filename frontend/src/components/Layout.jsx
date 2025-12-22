@@ -1,38 +1,51 @@
 import { Link, useLocation } from 'react-router-dom'
-import { Landmark } from 'lucide-react'
+import { Landmark, Home, BarChart2, ChevronRight } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useEffect } from 'react'
+import nprogress from 'nprogress'
+import 'nprogress/nprogress.css'
+
+nprogress.configure({ showSpinner: false })
 
 export default function Layout({ children }) {
   const location = useLocation()
   const path = location.pathname
 
-  const linkClass = (href) => {
-    const isActive =
-      (href === '/' && path === '/') ||
-      (href !== '/' && path === href)
+  useEffect(() => {
+    nprogress.start()
+    const timer = setTimeout(() => nprogress.done(), 300)
+    return () => {
+      clearTimeout(timer)
+      nprogress.done()
+    }
+  }, [location.pathname])
 
-    return `inline-flex h-11 items-center justify-center rounded-xl px-6 text-sm font-medium transition-colors ${isActive ? 'bg-gov-accent text-white' : 'text-zinc-700 hover:bg-zinc-100'
+  const linkClass = (href) => {
+    const isActive = (href === '/' && path === '/') || (href !== '/' && path === href)
+    return `relative inline-flex h-9 items-center justify-center rounded-full px-4 text-sm font-medium transition-all duration-200 ${isActive
+        ? 'bg-gov-accent text-white shadow-sm ring-1 ring-indigo-500/20'
+        : 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100'
       }`
   }
 
   return (
-    <div className="min-h-screen bg-gov-bg text-gov-blue flex flex-col font-sans">
+    <div className="min-h-screen bg-gov-bg selection:bg-indigo-100 selection:text-indigo-900 flex flex-col font-sans antialiased">
       {/* Mobile App Header */}
-      <header className="sticky top-0 z-50 border-b border-zinc-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/90">
-        <div className="px-4 py-3 sm:px-6">
-          <div className="flex items-center justify-between">
-            <Link to="/" className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gov-accent text-white shadow-sm">
-                <Landmark className="h-5 w-5" />
+      <header className="sticky top-0 z-50 border-b border-zinc-200/80 bg-white/80 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60">
+        <div className="mx-auto max-w-5xl px-4 py-3 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-10">
+            <Link to="/" className="flex items-center gap-2.5 group">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-md shadow-indigo-200 transition-transform group-hover:scale-105">
+                <Landmark className="h-4 w-4" />
               </div>
               <div>
-                <div className="text-base font-bold leading-tight text-gov-blue">E-Voting BEM</div>
-                <div className="text-xs text-zinc-500">Sistem Pemilihan</div>
+                <div className="text-sm font-bold leading-none text-gov-blue tracking-tight group-hover:text-gov-accent transition-colors">E-Voting BEM</div>
+                <div className="text-[10px] font-medium text-zinc-400 leading-none mt-0.5">Sistem Pemilihan</div>
               </div>
             </Link>
 
             {/* Desktop Navigation */}
-            <nav className="hidden items-center gap-1 sm:flex sm:justify-end sm:flex-1">
+            <nav className="hidden items-center gap-1 sm:flex">
               <Link to="/" className={linkClass('/')}>Beranda</Link>
               <Link to="/results" className={linkClass('/results')}>Hasil</Link>
             </nav>
@@ -40,49 +53,55 @@ export default function Layout({ children }) {
         </div>
       </header>
 
-      {/* Main Content with Mobile Padding & Transitions */}
-      <main className="flex-1 pb-24 sm:pb-8">
-        <div className="mx-auto w-full max-w-4xl px-4 py-4 sm:px-6 sm:py-6">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={path}
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -15 }}
-              transition={{ duration: 0.3, ease: 'easeOut' }}
-            >
-              {children}
-            </motion.div>
-          </AnimatePresence>
-        </div>
+      {/* Main Content */}
+      <main className="flex-1 w-full mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-8 pb-24 sm:pb-12">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={path}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.25, ease: 'easeOut' }}
+            className="h-full"
+          >
+            {children}
+          </motion.div>
+        </AnimatePresence>
       </main>
 
-      {/* Mobile Bottom Navigation (App-like) */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-zinc-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/90 sm:hidden">
-        <div className="grid grid-cols-2 gap-1 px-2 py-2 safe-area-bottom">
+      {/* Mobile Bottom Navigation */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-zinc-200 bg-white/90 backdrop-blur-lg supports-[backdrop-filter]:bg-white/80 pb-safe sm:hidden">
+        <div className="grid grid-cols-2 gap-1 px-4 py-2">
           <Link
             to="/"
-            className={`flex flex-col items-center justify-center rounded-xl py-2 text-xs transition-colors active:scale-95 duration-100 ${path === '/' ? 'text-gov-accent bg-gov-accent/5 font-bold' : 'text-zinc-500 hover:text-zinc-700'
+            className={`flex flex-col items-center justify-center rounded-xl py-2.5 transition-all active:scale-95 ${path === '/' ? 'text-gov-accent' : 'text-zinc-400 hover:text-zinc-600'
               }`}
           >
-            <div className="mb-1 text-lg">🏠</div>
-            <span>Beranda</span>
+            <Home className={`h-6 w-6 mb-1 transition-transform ${path === '/' ? 'scale-110' : ''}`} strokeWidth={path === '/' ? 2.5 : 2} />
+            <span className="text-[10px] font-medium">Beranda</span>
           </Link>
           <Link
             to="/results"
-            className={`flex flex-col items-center justify-center rounded-xl py-2 text-xs transition-colors active:scale-95 duration-100 ${path === '/results' ? 'text-gov-accent bg-gov-accent/5 font-bold' : 'text-zinc-500 hover:text-zinc-700'
+            className={`flex flex-col items-center justify-center rounded-xl py-2.5 transition-all active:scale-95 ${path === '/results' ? 'text-gov-accent' : 'text-zinc-400 hover:text-zinc-600'
               }`}
           >
-            <div className="mb-1 text-lg">📈</div>
-            <span>Hasil</span>
+            <BarChart2 className={`h-6 w-6 mb-1 transition-transform ${path === '/results' ? 'scale-110' : ''}`} strokeWidth={path === '/results' ? 2.5 : 2} />
+            <span className="text-[10px] font-medium">Hasil</span>
           </Link>
         </div>
       </nav>
 
       {/* Desktop Footer */}
-      <footer className="hidden border-t border-zinc-200 bg-white sm:block">
-        <div className="mx-auto w-full max-w-4xl px-4 py-4 text-xs text-zinc-500 sm:px-6">
-          © 2025 Panitia Pemilihan - Secured System
+      <footer className="hidden border-t border-zinc-100 bg-white sm:block mt-auto">
+        <div className="mx-auto w-full max-w-5xl px-6 py-8">
+          <div className="flex items-center justify-between">
+            <div className="text-xs text-zinc-400 font-medium">
+              © 2025 Panitia Pemilihan Umum Raya (PEMIRA)
+            </div>
+            <div className="flex gap-4">
+              {/* Footer links if needed */}
+            </div>
+          </div>
         </div>
       </footer>
     </div>

@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
-import { NavLink, Navigate, Outlet, useNavigate } from 'react-router-dom'
+import { NavLink, Navigate, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { FileText, LayoutDashboard, LogOut, Shield, Users, UserSquare2 } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient.js'
+import nprogress from 'nprogress'
+import 'nprogress/nprogress.css'
 
 function SidebarLink({ to, icon: Icon, children }) {
   return (
@@ -20,10 +22,36 @@ function SidebarLink({ to, icon: Icon, children }) {
   )
 }
 
+function MobileNavLink({ to, icon: Icon, label }) {
+  return (
+    <NavLink
+      to={to}
+      className={({ isActive }) =>
+        `flex flex-col items-center justify-center py-2 px-1 transition-all duration-200 active:scale-95 ${isActive ? 'text-gov-accent' : 'text-zinc-400 hover:text-zinc-600'
+        }`
+      }
+    >
+      <Icon className="h-6 w-6 mb-1" strokeWidth={2} />
+      <span className="text-[10px] font-medium leading-none">{label}</span>
+    </NavLink>
+  )
+}
+
 export default function AdminLayout() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [checking, setChecking] = useState(true)
   const [session, setSession] = useState(null)
+
+  // Trigger NProgress on admin route change
+  useEffect(() => {
+    nprogress.start()
+    const timer = setTimeout(() => nprogress.done(), 300)
+    return () => {
+      clearTimeout(timer)
+      nprogress.done()
+    }
+  }, [location.pathname])
 
   useEffect(() => {
     let mounted = true
@@ -64,9 +92,10 @@ export default function AdminLayout() {
   }
 
   return (
-    <div className="min-h-dvh bg-gov-bg text-gov-blue">
+    <div className="min-h-dvh bg-gov-bg text-gov-blue pb-20 md:pb-0"> {/* Added pb-20 for mobile nav spacing */}
       <div className="mx-auto flex min-h-dvh w-full max-w-6xl">
-        <aside className="hidden w-64 shrink-0 flex-col bg-gov-blue px-4 py-5 sm:flex">
+        {/* Desktop Sidebar */}
+        <aside className="hidden w-64 shrink-0 flex-col bg-gov-blue px-4 py-5 md:flex">
           <div className="flex items-center gap-3 px-2">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-white">
               <Shield className="h-5 w-5" />
@@ -108,82 +137,40 @@ export default function AdminLayout() {
           </div>
         </aside>
 
-        <main className="flex-1 px-4 py-6 sm:px-6 sm:py-8">
-          <div className="mb-4 flex items-center justify-between sm:hidden">
-            <div className="text-sm font-semibold">PEMIRA BEM</div>
-            <button
-              type="button"
-              onClick={async () => {
+        {/* Content Area */}
+        <div className="flex-1 flex flex-col min-w-0">
+          {/* Mobile Top Header (Minimal) */}
+          <div className="sticky top-0 z-30 flex items-center justify-between bg-white/90 backdrop-blur-md px-4 py-3 border-b border-zinc-200 shadow-sm md:hidden text-center">
+            <div className="font-bold text-gov-blue w-full">Panel Admin</div>
+          </div>
+
+          <main className="flex-1 px-4 py-6 sm:px-6 sm:py-8">
+            <Outlet />
+          </main>
+        </div>
+      </div>
+
+      {/* Mobile Bottom Navigation Bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-zinc-200 px-4 pb-safe pt-2 md:hidden">
+        <div className="grid grid-cols-5 gap-1 mb-2">
+          <MobileNavLink to="/admin/dashboard" icon={LayoutDashboard} label="Dash" />
+          <MobileNavLink to="/admin/candidates" icon={UserSquare2} label="Paslon" />
+          <MobileNavLink to="/admin/voters" icon={Users} label="DPT" />
+          <MobileNavLink to="/admin/audit" icon={FileText} label="Audit" />
+
+          <button
+            onClick={async () => {
+              if (confirm('Yakin ingin logout?')) {
                 await supabase.auth.signOut()
                 navigate('/admin/login', { replace: true })
-              }}
-              className="inline-flex h-10 items-center justify-center rounded-xl border border-zinc-200 bg-white px-3 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
-            >
-              Logout
-            </button>
-          </div>
-
-          <div className="sm:hidden">
-            <div className="grid grid-cols-3 gap-2">
-              <NavLink
-                to="/admin/dashboard"
-                className={({ isActive }) =>
-                  [
-                    'inline-flex h-10 items-center justify-center rounded-xl border text-xs font-semibold',
-                    isActive
-                      ? 'border-gov-accent bg-gov-accent text-white'
-                      : 'border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50',
-                  ].join(' ')
-                }
-              >
-                Dashboard
-              </NavLink>
-              <NavLink
-                to="/admin/candidates"
-                className={({ isActive }) =>
-                  [
-                    'inline-flex h-10 items-center justify-center rounded-xl border text-xs font-semibold',
-                    isActive
-                      ? 'border-gov-accent bg-gov-accent text-white'
-                      : 'border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50',
-                  ].join(' ')
-                }
-              >
-                Kandidat
-              </NavLink>
-              <NavLink
-                to="/admin/voters"
-                className={({ isActive }) =>
-                  [
-                    'inline-flex h-10 items-center justify-center rounded-xl border text-xs font-semibold',
-                    isActive
-                      ? 'border-gov-accent bg-gov-accent text-white'
-                      : 'border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50',
-                  ].join(' ')
-                }
-              >
-                DPT
-              </NavLink>
-              <NavLink
-                to="/admin/audit"
-                className={({ isActive }) =>
-                  [
-                    'inline-flex h-10 items-center justify-center rounded-xl border text-xs font-semibold',
-                    isActive
-                      ? 'border-gov-accent bg-gov-accent text-white'
-                      : 'border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50',
-                  ].join(' ')
-                }
-              >
-                Audit
-              </NavLink>
-            </div>
-          </div>
-
-          <div className="mt-5">
-            <Outlet />
-          </div>
-        </main>
+              }
+            }}
+            className="flex flex-col items-center justify-center py-2 px-1 text-zinc-400 hover:text-red-500 transition-all active:scale-95"
+          >
+            <LogOut className="h-6 w-6 mb-1" strokeWidth={2} />
+            <span className="text-[10px] font-medium leading-none">Keluar</span>
+          </button>
+        </div>
       </div>
     </div>
   )

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import Layout from '../components/Layout.jsx'
 import Modal from '../components/Modal.jsx'
@@ -223,8 +224,8 @@ export default function VotePage() {
 
   return (
     <Layout>
-      <GridBackground className="w-full h-full pb-20" containerClassName="min-h-screen items-start h-auto">
-        <div className="w-full relative z-10">
+      <GridBackground className="w-full h-full pb-20" containerClassName="min-h-screen items-start h-auto bg-zinc-50/50">
+        <div className="w-full relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
           <Toast
             open={toast.open}
             variant={toast.variant}
@@ -234,36 +235,126 @@ export default function VotePage() {
           />
 
           {/* Header content */}
-          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between bg-white/50 backdrop-blur-md p-4 rounded-2xl border border-white/20 shadow-sm sticky top-0 z-20">
+          <div className="mb-10 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gov-blue">Pilih Kandidat</h1>
-              <div className="flex items-center gap-2 mt-1">
-                <div className={`flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full border ${statusBadge.className}`}>
-                  <statusBadge.icon className="w-3 h-3" /> {statusBadge.label}
-                </div>
-                <div className="text-xs text-zinc-500 font-mono bg-zinc-100 px-2 py-0.5 rounded-full">
-                  {nimMasked}
-                </div>
-              </div>
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="inline-flex items-center gap-2 mb-2 px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 text-xs font-bold uppercase tracking-wider border border-indigo-100"
+              >
+                {statusBadge.icon && <statusBadge.icon className="w-3 h-3" />}
+                {statusBadge.label}
+              </motion.div>
+              <h1 className="text-3xl sm:text-4xl font-bold text-zinc-900 tracking-tight">Pilih Kandidat</h1>
+              <p className="text-zinc-500 mt-2 max-w-lg">
+                Gunakan hak suara Anda dengan bijak. Pilihan Anda bersifat rahasia dan menentukan masa depan organisasi.
+              </p>
             </div>
-            <div className="flex gap-2">
-              <button onClick={() => setRefreshNonce(n => n + 1)} className="p-2 rounded-xl bg-white border border-zinc-200 hover:bg-zinc-50 shadow-sm">
-                <RefreshCw className={`w-4 h-4 text-zinc-700 ${refreshing ? 'animate-spin' : ''}`} />
+
+            <div className="flex items-center gap-3 bg-white p-2 rounded-2xl shadow-sm border border-zinc-200/60 backdrop-blur-sm">
+              <div className="px-4 py-2 bg-zinc-50 rounded-xl border border-zinc-100">
+                <div className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">Login Sebagai</div>
+                <div className="font-mono text-sm font-bold text-zinc-700">{nimMasked}</div>
+              </div>
+              <div className="h-8 w-px bg-zinc-200 mx-1"></div>
+              <button onClick={() => setRefreshNonce(n => n + 1)} className="p-3 rounded-xl hover:bg-zinc-50 text-zinc-500 hover:text-indigo-600 transition-colors">
+                <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
               </button>
-              <button onClick={logout} className="p-2 rounded-xl bg-red-50 border border-red-100 hover:bg-red-100 shadow-sm">
-                <LogOut className="w-4 h-4 text-red-600" />
+              <button onClick={logout} className="p-3 rounded-xl hover:bg-red-50 text-zinc-500 hover:text-red-600 transition-colors">
+                <LogOut className="w-5 h-5" />
               </button>
             </div>
           </div>
 
           {/* Candidates Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {grid}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {loading && candidates.length === 0 ? (
+              Array.from({ length: 3 }).map((_, idx) => <CandidateSkeleton key={idx} />)
+            ) : (
+              candidates.map((c, idx) => {
+                const taglineRaw = c.vision || c.mission || ''
+                const tagline = taglineRaw ? String(taglineRaw).replace(/\s+/g, ' ').trim() : ''
+                const showPhoto = Boolean(c.photo_url) && !brokenPhotoIds.has(c.id)
+                const displayNo = idx + 1
+
+                return (
+                  <motion.div
+                    key={c.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.1 }}
+                    className="group relative flex flex-col bg-white rounded-[2rem] border border-zinc-200 shadow-sm transition-all duration-300 hover:border-indigo-300 hover:shadow-xl hover:shadow-indigo-500/10 hover:-translate-y-1 overflow-hidden h-full"
+                  >
+                    {/* Photo Area */}
+                    <div className="relative aspect-[4/3] w-full overflow-hidden bg-zinc-100 p-2">
+                      {showPhoto ? (
+                        <img
+                          src={c.photo_url}
+                          alt="Kandidat"
+                          className="h-full w-full object-contain transition-transform duration-700 group-hover:scale-105"
+                          loading="lazy"
+                          onError={() => setBrokenPhotoIds(prev => new Set(prev).add(c.id))}
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center bg-zinc-50 text-zinc-300">
+                          <User className="h-24 w-24" />
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent pointer-events-none"></div>
+
+                      <div className="absolute top-4 left-4">
+                        <div className="h-10 w-10 flex items-center justify-center rounded-xl bg-white/90 backdrop-blur-md shadow-sm font-bold text-lg text-zinc-900 border border-white/50">
+                          {displayNo}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Content Area */}
+                    <div className="flex flex-1 flex-col p-6 pt-5">
+                      <div className="mb-4">
+                        <h3 className="text-xl font-bold text-zinc-900 leading-tight group-hover:text-indigo-600 transition-colors">
+                          {c.chairman_name}
+                        </h3>
+                        <div className="mt-1 text-sm font-medium text-zinc-500">
+                          & {c.vice_chairman_name}
+                        </div>
+                      </div>
+
+                      <div className="py-3 px-4 rounded-xl bg-zinc-50 border border-zinc-100 mb-6 flex-1">
+                        <p className="text-xs text-zinc-500 line-clamp-3 italic leading-relaxed">
+                          "{tagline || 'Menuju perubahan yang lebih baik.'}"
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3 mt-auto">
+                        <button
+                          onClick={() => setDetailCandidate({ ...c, displayNo })}
+                          className="w-full rounded-xl border border-zinc-200 py-3 text-sm font-semibold text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 hover:border-zinc-300 transition-all"
+                        >
+                          Detail
+                        </button>
+                        <button
+                          onClick={() => { setSelectedCandidate({ ...c, displayNo }); setConfirmOpen(true); }}
+                          disabled={!isVotingOpen || settingsLoading}
+                          className="w-full rounded-xl bg-zinc-900 py-3 text-sm font-semibold text-white shadow-lg shadow-zinc-900/20 hover:bg-indigo-600 hover:shadow-indigo-500/30 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Pilih
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                )
+              })
+            )}
           </div>
 
           {candidates.length === 0 && !loading && (
-            <div className="text-center py-20">
-              <p className="text-zinc-400">Belum ada kandidat.</p>
+            <div className="text-center py-32 rounded-[2.5rem] bg-white border border-dashed border-zinc-300 mt-8">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-zinc-50 mb-4">
+                <User className="h-8 w-8 text-zinc-400" />
+              </div>
+              <h3 className="text-lg font-bold text-zinc-900">Belum Ada Kandidat</h3>
+              <p className="text-zinc-500 max-w-sm mx-auto mt-2">Daftar kandidat belum tersedia saat ini. Silakan kembali lagi nanti.</p>
             </div>
           )}
         </div>
