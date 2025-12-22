@@ -4,6 +4,11 @@ import { BarChart3, LockKeyhole, UserCog, Vote, ChevronRight, Shield, Clock } fr
 import Layout from '../components/Layout.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { supabase } from '../lib/supabaseClient.js'
+import { SparklesCore } from '../components/ui/sparkles.jsx'
+import { TextGenerateEffect } from '../components/ui/text-generate-effect.jsx'
+
+import { BackgroundGradient } from '../components/ui/background-gradient.jsx'
+import { cn } from '../lib/utils.js'
 
 export default function HomePage() {
   const { nim, isAuthenticated, logout } = useAuth()
@@ -60,81 +65,85 @@ export default function HomePage() {
 
   return (
     <Layout>
-      <div className="space-y-6">
-        {/* Welcome Section - Mobile First */}
-        <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
-          <div className="bg-gradient-to-br from-gov-acent/10 via-white to-white p-4 sm:p-6">
-            <div className="flex flex-col gap-4">
+      <div className="space-y-8 pb-10">
+        {/* Welcome Section - Mobile First with Sparkles */}
+        <div className="relative overflow-hidden rounded-3xl bg-gov-blue shadow-xl">
+          <div className="absolute inset-0 h-full w-full">
+            <SparklesCore
+              id="tsparticlesfullpage"
+              background="transparent"
+              minSize={0.6}
+              maxSize={1.4}
+              particleDensity={100}
+              className="h-full w-full"
+              particleColor="#FFFFFF"
+            />
+          </div>
+
+          <div className="relative z-20 p-6 sm:p-10 text-center sm:text-left">
+            <div className="flex flex-col gap-6">
               <div>
-                <div className="text-sm font-semibold text-gov-accent">PEMIRA BEM</div>
-                <h1 className="mt-1 text-xl font-bold tracking-tight text-gov-blue sm:text-2xl">
-                  E-Voting Mahasiswa
-                </h1>
-                <p className="mt-2 text-sm text-zinc-600">
-                  Pemilihan Raya Badan Eksekutif Mahasiswa
-                </p>
+                <div className="inline-block rounded-full bg-indigo-500/20 px-3 py-1 text-xs font-semibold text-indigo-200 backdrop-blur-md border border-indigo-500/30">
+                  PEMIRA BEM 2025
+                </div>
+                <div className="mt-2 text-white">
+                  <TextGenerateEffect
+                    words="E-Voting Mahasiswa BEM"
+                    className="text-3xl font-bold tracking-tight sm:text-4xl text-white"
+                  />
+                  <p className="mt-2 text-zinc-300 max-w-lg mx-auto sm:mx-0">
+                    Suara Anda menentukan masa depan. Pilih pemimpin terbaik untuk BEM yang lebih baik.
+                  </p>
+                </div>
               </div>
 
-              {/* Status Cards - Mobile Optimized */}
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="rounded-xl border border-zinc-200 bg-white p-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50">
-                        <Vote className="h-4 w-4 text-emerald-600" />
-                      </div>
-                      <div>
-                        <div className="text-xs font-medium text-zinc-600">Voting</div>
-                        <div className={`text-sm font-semibold ${settings?.is_voting_open ? 'text-emerald-600' : 'text-zinc-500'}`}>
-                          {settings ? (settings.is_voting_open ? 'Dibuka' : 'Ditutup') : '—'}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="rounded-xl border border-zinc-200 bg-white p-3">
-                  <div className="flex items-center gap-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50">
-                      <BarChart3 className="h-4 w-4 text-blue-600" />
+              {/* Status Cards - with BackgroundGradient */}
+              <div className="grid gap-6 sm:grid-cols-2">
+                <BackgroundGradient className="rounded-[22px] bg-white dark:bg-zinc-900 p-4 h-full">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100 dark:bg-emerald-900/30">
+                      <Vote className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
                     </div>
                     <div>
-                      <div className="text-xs font-medium text-zinc-600">Rekap</div>
-                      <div
-                        className={`text-sm font-semibold ${settings?.show_live_result ? 'text-blue-600' : 'text-zinc-500'
-                          }`}
-                      >
-                        {settings
-                          ? settings.show_live_result
-                            ? 'Ditayangkan'
-                            : 'Disembunyikan'
-                          : '—'}
-                      </div>
-                      <div className="text-[11px] text-zinc-500">
-                        {recapSummary.leader
-                          ? `Unggul: ${recapSummary.leader}`
-                          : settings?.show_live_result
-                            ? 'Menunggu data'
-                            : 'Aktifkan di dashboard'}
+                      <div className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Status Voting</div>
+                      <div className={cn("text-base font-bold", settings?.is_voting_open ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-500')}>
+                        {settings ? (settings.is_voting_open ? 'Sedang Dibuka' : 'Ditutup') : '—'}
                       </div>
                     </div>
                   </div>
-                </div>
+                </BackgroundGradient>
+
+                <BackgroundGradient className="rounded-[22px] bg-white dark:bg-zinc-900 p-4 h-full">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-100 dark:bg-blue-900/30">
+                      <BarChart3 className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div>
+                      <div className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Live Result</div>
+                      <div className={cn("text-base font-bold", settings?.show_live_result ? 'text-blue-600 dark:text-blue-400' : 'text-zinc-500')}>
+                        {settings ? (settings.show_live_result ? 'Ditayangkan' : 'Rahasia') : '—'}
+                      </div>
+                    </div>
+                  </div>
+                </BackgroundGradient>
               </div>
 
               {/* User Status */}
               {isAuthenticated && (
-                <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Shield className="h-4 w-4 text-emerald-600" />
-                      <div className="text-sm text-emerald-900">
-                        <span className="font-medium">NIM:</span> <span className="font-mono">{nim}</span>
+                <div className="mt-2 rounded-xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-sm">
+                  <div className="flex items-center justify-between text-white">
+                    <div className="flex items-center gap-3">
+                      <div className="p-1.5 bg-emerald-500/20 rounded-lg">
+                        <Shield className="h-4 w-4 text-emerald-400" />
+                      </div>
+                      <div>
+                        <div className="text-xs text-zinc-400">Login sebagai</div>
+                        <div className="font-mono text-sm font-semibold tracking-wider">{nim}</div>
                       </div>
                     </div>
                     <button
                       onClick={logout}
-                      className="text-xs text-emerald-700 hover:text-emerald-900"
+                      className="text-xs font-medium text-red-300 hover:text-red-200 bg-red-500/10 hover:bg-red-500/20 px-3 py-1.5 rounded-lg transition-colors border border-red-500/20"
                     >
                       Keluar
                     </button>
@@ -145,86 +154,81 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Quick Actions - Mobile Cards */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
-          <Link
-            to={isAuthenticated ? '/vote' : '/login'}
-            className="group rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm transition-all hover:shadow-md hover:border-gov-accent/50"
-          >
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gov-accent/10 text-gov-accent">
+        {/* Quick Actions - 3D Cards */}
+        <div className="grid gap-6 sm:grid-cols-2">
+          <Link to={isAuthenticated ? '/vote' : '/login'} className="block h-full group">
+            <div className="h-full rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm transition-all hover:shadow-md hover:border-gov-accent/50 flex flex-col">
+              <div className="mb-4">
+                <h3 className="text-xl font-bold text-zinc-800">
+                  Bilik Suara Digital
+                </h3>
+                <p className="text-zinc-500 text-sm mt-2 max-w-sm">
+                  {isAuthenticated ? 'Lanjutkan untuk memilih kandidat.' : 'Login untuk mulai voting.'}
+                </p>
+              </div>
+
+              <div className="mt-auto">
+                <div className="flex items-center justify-between rounded-xl bg-gov-accent px-4 py-3 text-white shadow-sm group-hover:shadow-md transition-all">
+                  <span className="font-semibold">Mulai Voting</span>
                   <Vote className="h-5 w-5" />
                 </div>
-                <div className="mt-3">
-                  <div className="font-semibold text-zinc-900">Bilik Suara</div>
-                  <div className="mt-1 text-sm text-zinc-600">
-                    {isAuthenticated ? 'Lanjutkan voting' : 'Masuk untuk voting'}
-                  </div>
-                </div>
               </div>
-              <ChevronRight className="mt-8 h-4 w-4 text-zinc-400 transition-colors group-hover:text-gov-accent" />
             </div>
           </Link>
 
-          <Link
-            to="/results"
-            className="group rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm transition-all hover:shadow-md hover:border-sky-200"
-          >
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-50 text-sky-700">
+          <Link to="/results" className="block h-full group">
+            <div className="h-full rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm transition-all hover:shadow-md hover:border-sky-500/50 flex flex-col">
+              <div className="mb-4">
+                <h3 className="text-xl font-bold text-zinc-800">
+                  Rekapitulasi Suara
+                </h3>
+                <p className="text-zinc-500 text-sm mt-2 max-w-sm">
+                  Pantau hasil pemilihan secara realtime & transparan.
+                </p>
+              </div>
+
+              <div className="mt-auto">
+                <div className="flex items-center justify-between rounded-xl bg-sky-600 px-4 py-3 text-white shadow-sm group-hover:shadow-md transition-all">
+                  <span className="font-semibold">Lihat Hasil</span>
                   <BarChart3 className="h-5 w-5" />
                 </div>
-                <div className="mt-3">
-                  <div className="font-semibold text-zinc-900">Rekap Suara</div>
-                  <div className="mt-1 text-sm text-zinc-600">Lihat hasil voting</div>
-                </div>
               </div>
-              <ChevronRight className="mt-8 h-4 w-4 text-zinc-400 transition-colors group-hover:text-sky-600" />
             </div>
           </Link>
         </div>
 
-        {/* Instructions - Mobile Optimized */}
-        <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-6">
-          <div className="flex items-center gap-2 text-sm font-semibold text-gov-blue">
-            <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-gov-accent/10 text-xs font-bold text-gov-accent">
-              ?
+        {/* Instructions - Clean Design */}
+        <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gov-blue text-white shadow-md shadow-gov-blue/20">
+              <span className="text-lg font-bold">?</span>
             </div>
-            Cara Memilih
+            <div>
+              <h2 className="text-lg font-bold text-gov-blue">Cara Memilih</h2>
+              <p className="text-xs text-zinc-500">Panduan singkat e-voting</p>
+            </div>
           </div>
 
-          <div className="mt-4 space-y-3">
-            <div className="flex gap-3">
-              <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg bg-gov-accent text-xs font-bold text-white">
-                1
+          <div className="space-y-4">
+            {[
+              { id: 1, title: 'Login', desc: 'Masuk dengan NIM & Kode Akses.' },
+              { id: 2, title: 'Pilih', desc: 'Tentukan pilihan kandidat Anda.' },
+              { id: 3, title: 'Selesai', desc: 'Logout otomatis demi keamanan.' }
+            ].map((step) => (
+              <div key={step.id} className="flex items-start gap-4 p-3 rounded-2xl hover:bg-zinc-50 transition-colors">
+                <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-zinc-100 text-sm font-bold text-zinc-600 border border-zinc-200">
+                  {step.id}
+                </div>
+                <div>
+                  <div className="font-semibold text-zinc-900">{step.title}</div>
+                  <div className="text-sm text-zinc-600">{step.desc}</div>
+                </div>
               </div>
-              <div className="text-sm text-zinc-700">
-                <span className="font-medium">Masuk untuk Voting</span> - Gunakan NIM/NPM dan Kode Akses dari panitia
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg bg-gov-accent text-xs font-bold text-white">
-                2
-              </div>
-              <div className="text-sm text-zinc-700">
-                <span className="font-medium">Pilih Kandidat</span> - Pilih salah satu kandidat dan konfirmasi pilihan
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg bg-gov-accent text-xs font-bold text-white">
-                3
-              </div>
-              <div className="text-sm text-zinc-700">
-                <span className="font-medium">Selesai</span> - Sesi otomatis berakhir untuk keamanan data
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </div>
     </Layout>
   )
 }
+
