@@ -67,8 +67,8 @@ export default function AdminLoginPage() {
                 <Shield className="h-6 w-6" />
               </div>
               <div>
-                <div className="text-lg font-bold tracking-tight">Admin Login</div>
-                <div className="text-sm text-zinc-600">Panitia pemilihan (Supabase Auth)</div>
+                <div className="text-lg font-bold tracking-tight">PEMIRA BEM</div>
+                <div className="text-sm text-zinc-600">Login Panitia Pemilihan</div>
               </div>
             </div>
 
@@ -121,7 +121,7 @@ export default function AdminLoginPage() {
             </form>
           </div>
 
-          <p className="mt-4 text-center text-xs text-zinc-500">© 2025 Panitia Pemilihan - Secured System</p>
+          <p className="mt-4 text-center text-xs text-zinc-500">© 2025 PEMIRA BEM - Secured by Supabase</p>
         </div>
       </div>
     </div>

@@ -121,9 +121,7 @@ export default function VotePage() {
 
   const nimMasked = useMemo(() => {
     if (!nim) return ''
-    const raw = String(nim)
-    if (raw.length <= 6) return raw
-    return `${raw.slice(0, 4)}${'•'.repeat(Math.min(8, raw.length - 6))}${raw.slice(-2)}`
+    return String(nim)
   }, [nim])
 
   const statusBadge = useMemo(() => {
@@ -163,7 +161,7 @@ export default function VotePage() {
             {showPhoto ? (
               <img
                 src={c.photo_url}
-                alt={c.name}
+                alt={`${c.chairman_name} & ${c.vice_chairman_name}`}
                 className="h-full w-full object-cover"
                 loading="lazy"
                 onError={() => {
@@ -186,9 +184,14 @@ export default function VotePage() {
 
           <div className="flex flex-1 flex-col gap-3 p-4">
             <div className="min-w-0">
-              <div className="truncate text-base font-semibold text-gov-blue">{c.name}</div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-lg font-bold text-gov-blue">{c.candidate_number}</span>
+                <h3 className="truncate text-base font-semibold text-zinc-900">
+                  {c.chairman_name} & {c.vice_chairman_name}
+                </h3>
+              </div>
               <div className="mt-1 truncate text-xs text-zinc-500">
-                {tagline || 'Tap detail untuk visi & misi'}
+                {tagline || 'Visi & Misi Paslon'}
               </div>
             </div>
 
@@ -461,8 +464,13 @@ export default function VotePage() {
           </div>
 
           <div>
-            <div className="text-xs font-semibold text-zinc-500">Calon #{detailCandidate?.displayNo ?? detailCandidate?.id}</div>
-            <div className="mt-1 text-lg font-semibold text-gov-blue">{detailCandidate?.name}</div>
+            <div className="text-xs font-semibold text-zinc-500">Paslon No. Urut #{detailCandidate?.candidate_number}</div>
+            <div className="mt-1 text-lg font-bold text-gov-blue">
+              {detailCandidate?.chairman_name}
+              <span className="mx-1 font-normal text-zinc-400">&</span>
+              {detailCandidate?.vice_chairman_name}
+            </div>
+            <div className="mt-1 text-sm text-zinc-600 font-medium">Calon Ketua & Wakil Ketua BEM</div>
           </div>
 
           <div className="rounded-2xl border border-zinc-200 bg-white p-4">
@@ -519,7 +527,9 @@ export default function VotePage() {
             </div>
             <div className="min-w-0">
               <div className="text-xs font-semibold text-zinc-500">Kandidat yang dipilih</div>
-              <div className="truncate text-sm font-semibold text-zinc-900">{selectedCandidate?.name}</div>
+              <div className="truncate text-sm font-semibold text-zinc-900">
+                {selectedCandidate?.chairman_name} & {selectedCandidate?.vice_chairman_name}
+              </div>
             </div>
           </div>
 

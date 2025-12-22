@@ -35,7 +35,7 @@ export default function HomePage() {
       if (!error && Array.isArray(data) && data.length > 0) {
         const sorted = [...data]
           .map((r) => ({
-            name: r.candidate_name,
+            name: r.chairman_name || 'Unknown',
             total: Number(r.total_votes ?? 0),
           }))
           .sort((a, b) => b.total - a.total)
@@ -66,12 +66,12 @@ export default function HomePage() {
           <div className="bg-gradient-to-br from-gov-acent/10 via-white to-white p-4 sm:p-6">
             <div className="flex flex-col gap-4">
               <div>
-                <div className="text-sm font-semibold text-gov-accent">Portal Pemilihan</div>
+                <div className="text-sm font-semibold text-gov-accent">PEMIRA BEM</div>
                 <h1 className="mt-1 text-xl font-bold tracking-tight text-gov-blue sm:text-2xl">
-                  E-Voting BEM
+                  E-Voting Mahasiswa
                 </h1>
                 <p className="mt-2 text-sm text-zinc-600">
-                  Akses bilik suara digital dan pantau hasil
+                  Pemilihan Raya Badan Eksekutif Mahasiswa
                 </p>
               </div>
 
@@ -101,9 +101,8 @@ export default function HomePage() {
                     <div>
                       <div className="text-xs font-medium text-zinc-600">Rekap</div>
                       <div
-                        className={`text-sm font-semibold ${
-                          settings?.show_live_result ? 'text-blue-600' : 'text-zinc-500'
-                        }`}
+                        className={`text-sm font-semibold ${settings?.show_live_result ? 'text-blue-600' : 'text-zinc-500'
+                          }`}
                       >
                         {settings
                           ? settings.show_live_result
@@ -195,7 +194,7 @@ export default function HomePage() {
             </div>
             Cara Memilih
           </div>
-          
+
           <div className="mt-4 space-y-3">
             <div className="flex gap-3">
               <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg bg-gov-accent text-xs font-bold text-white">
@@ -205,7 +204,7 @@ export default function HomePage() {
                 <span className="font-medium">Masuk untuk Voting</span> - Gunakan NIM/NPM dan Kode Akses dari panitia
               </div>
             </div>
-            
+
             <div className="flex gap-3">
               <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg bg-gov-accent text-xs font-bold text-white">
                 2
@@ -214,7 +213,7 @@ export default function HomePage() {
                 <span className="font-medium">Pilih Kandidat</span> - Pilih salah satu kandidat dan konfirmasi pilihan
               </div>
             </div>
-            
+
             <div className="flex gap-3">
               <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg bg-gov-accent text-xs font-bold text-white">
                 3

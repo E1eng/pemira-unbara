@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { FileDown, FileUp, Plus, Printer, RotateCcw, Search, Trash2 } from 'lucide-react'
+import { FileDown, FileUp, Plus, Printer, Search, Trash2 } from 'lucide-react'
 import Modal from '../../components/Modal.jsx'
 import Toast from '../../components/Toast.jsx'
 import { supabase } from '../../lib/supabaseClient.js'
@@ -17,8 +17,8 @@ export default function AdminVotersPage() {
   const [formOpen, setFormOpen] = useState(false)
   const [importOpen, setImportOpen] = useState(false)
   const [exportOpen, setExportOpen] = useState(false)
-  const [resetOpen, setResetOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deleteAllOpen, setDeleteAllOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [importing, setImporting] = useState(false)
@@ -27,23 +27,26 @@ export default function AdminVotersPage() {
   const [importMasterList, setImportMasterList] = useState([])
 
   const [deletingNim, setDeletingNim] = useState(null)
-  const [resetNim, setResetNim] = useState('')
 
   const [nim, setNim] = useState('')
   const [name, setName] = useState('')
-  const [token, setToken] = useState('')
+  const [faculty, setFaculty] = useState('')
+  const [major, setMajor] = useState('')
+  const [generatedToken, setGeneratedToken] = useState('')
+  const [tokenModalOpen, setTokenModalOpen] = useState(false)
 
   const resetForm = () => {
     setNim('')
     setName('')
-    setToken('')
+    setFaculty('')
+    setMajor('')
   }
 
   const refresh = async () => {
     setLoading(true)
     const { data, error } = await supabase
       .from('voters')
-      .select('nim, name, has_voted, created_at')
+      .select('nim, name, faculty, major, has_voted, created_at')
       .order('created_at', { ascending: false })
 
     if (error) {
@@ -66,7 +69,6 @@ export default function AdminVotersPage() {
 
     const cleanedNim = nim.trim()
     const cleanedName = name.trim()
-    const cleanedToken = token.trim()
 
     if (!cleanedNim || !cleanedName) {
       setToast({ open: true, variant: 'warning', title: 'Periksa input', message: 'NIM/NPM dan Nama wajib diisi.' })
@@ -80,11 +82,13 @@ export default function AdminVotersPage() {
 
     setSubmitting(true)
 
-    // CRITICAL: use RPC so token gets hashed
-    const finalToken = cleanedToken || generateSecureToken(6)
+    // Auto-generate token (no manual input)
+    const finalToken = generateSecureToken(12)
     const { error } = await supabase.rpc('admin_add_voter', {
       p_nim: cleanedNim,
       p_name: cleanedName,
+      p_faculty: faculty.trim() || 'Unknown',
+      p_major: major.trim() || 'Unknown',
       p_access_code_plain: finalToken,
     })
 
@@ -97,7 +101,8 @@ export default function AdminVotersPage() {
     setSubmitting(false)
     setFormOpen(false)
     resetForm()
-    setToast({ open: true, variant: 'success', title: 'Berhasil', message: `Pemilih berhasil ditambahkan. Token: ${finalToken}` })
+    setGeneratedToken(finalToken)
+    setTokenModalOpen(true)
     refresh()
   }
 
@@ -117,6 +122,22 @@ export default function AdminVotersPage() {
     setDeleteOpen(false)
     setDeletingNim(null)
     setToast({ open: true, variant: 'success', title: 'Berhasil', message: 'Pemilih berhasil dihapus.' })
+    refresh()
+  }
+
+  const deleteAllVoters = async () => {
+    setSubmitting(true)
+    const { error } = await supabase.from('voters').delete().neq('nim', '')
+
+    if (error) {
+      setSubmitting(false)
+      setToast({ open: true, variant: 'error', title: 'Gagal menghapus', message: friendlyError(error) })
+      return
+    }
+
+    setSubmitting(false)
+    setDeleteAllOpen(false)
+    setToast({ open: true, variant: 'success', title: 'Berhasil', message: 'Semua pemilih berhasil dihapus.' })
     refresh()
   }
 
@@ -141,7 +162,7 @@ export default function AdminVotersPage() {
     return filtered.slice(start, start + PAGE_SIZE)
   }, [filtered, page])
 
-  const generateSecureToken = (length = 8) => {
+  const generateSecureToken = (length = 12) => {
     const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
     const buf = new Uint8Array(length)
     window.crypto.getRandomValues(buf)
@@ -152,6 +173,7 @@ export default function AdminVotersPage() {
     return out
   }
 
+  // Parse CSV with proper quote handling
   const parseDptCsv = (text) => {
     const rawLines = String(text ?? '')
       .split(/\r?\n/)
@@ -159,6 +181,32 @@ export default function AdminVotersPage() {
       .filter(Boolean)
 
     if (rawLines.length === 0) return []
+
+    // Smart parse a CSV line handling quoted values
+    const parseCSVLine = (line, delimiter) => {
+      const result = []
+      let current = ''
+      let inQuotes = false
+
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i]
+        const nextChar = line[i + 1]
+
+        if (char === '"' && inQuotes && nextChar === '"') {
+          current += '"'
+          i++ // Skip next quote
+        } else if (char === '"') {
+          inQuotes = !inQuotes
+        } else if (char === delimiter && !inQuotes) {
+          result.push(current.trim())
+          current = ''
+        } else {
+          current += char
+        }
+      }
+      result.push(current.trim())
+      return result
+    }
 
     const first = rawLines[0]
     const commaCount = (first.match(/,/g) || []).length
@@ -170,12 +218,14 @@ export default function AdminVotersPage() {
 
     const rows = []
     for (let i = startIndex; i < rawLines.length; i += 1) {
-      const parts = rawLines[i].split(delimiter).map((p) => p.trim())
+      const parts = parseCSVLine(rawLines[i], delimiter)
       if (parts.length < 2) continue
       const rowNim = parts[0]
-      const rowName = parts.slice(1).join(delimiter).trim()
+      const rowName = parts[1] || ''
+      const rowFaculty = parts[2] || 'Unknown'
+      const rowMajor = parts[3] || 'Unknown'
       if (!rowNim || !rowName) continue
-      rows.push({ nim: rowNim, name: rowName })
+      rows.push({ nim: rowNim, name: rowName, faculty: rowFaculty, major: rowMajor })
     }
 
     return rows
@@ -190,10 +240,10 @@ export default function AdminVotersPage() {
       return s
     }
 
-    const header = ['Name', 'NIM/NPM', 'Token']
+    const header = ['NIM', 'Name', 'Faculty', 'Major', 'Token']
     const lines = [header.join(',')]
     rows.forEach((r) => {
-      lines.push([escape(r.name), escape(r.nim), escape(r.token)].join(','))
+      lines.push([escape(r.nim), escape(r.name), escape(r.faculty), escape(r.major), escape(r.token)].join(','))
     })
     return lines.join('\n')
   }
@@ -207,10 +257,10 @@ export default function AdminVotersPage() {
       return s
     }
 
-    const header = ['nim', 'name', 'has_voted']
+    const header = ['nim', 'name', 'faculty', 'major', 'has_voted']
     const lines = [header.join(',')]
     rows.forEach((r) => {
-      lines.push([escape(r.nim), escape(r.name), escape(r.has_voted)].join(','))
+      lines.push([escape(r.nim), escape(r.name), escape(r.faculty), escape(r.major), escape(r.has_voted)].join(','))
     })
     return lines.join('\n')
   }
@@ -219,7 +269,7 @@ export default function AdminVotersPage() {
     setToast({ open: false, message: '', variant: 'error', title: '' })
     setExporting(true)
 
-    let q = supabase.from('voters').select('nim, name, has_voted').order('created_at', { ascending: false })
+    let q = supabase.from('voters').select('nim, name, faculty, major, has_voted').order('created_at', { ascending: false })
     if (onlyVoted) q = q.eq('has_voted', true)
 
     const { data, error } = await q
@@ -348,9 +398,15 @@ export default function AdminVotersPage() {
     const prepared = parsed
       .map((r) => {
         let t = generateSecureToken(12)
-        while (used.has(t)) t = generateSecureToken(6)
+        while (used.has(t)) t = generateSecureToken(12)
         used.add(t)
-        return { nim: String(r.nim).trim(), name: String(r.name).trim(), token: t }
+        return {
+          nim: String(r.nim).trim(),
+          name: String(r.name).trim(),
+          faculty: String(r.faculty || 'Unknown').trim(),
+          major: String(r.major || 'Unknown').trim(),
+          token: t
+        }
       })
       .filter((r) => r.nim && r.name)
 
@@ -380,6 +436,9 @@ export default function AdminVotersPage() {
         const cleanedName = String(row.name).trim()
         const cleanedToken = String(row.token).trim()
 
+        const cleanedFaculty = String(row.faculty || 'Unknown').trim()
+        const cleanedMajor = String(row.major || 'Unknown').trim()
+
         if (!cleanedNim || !cleanedName || !cleanedToken) {
           errors.push({ nim: cleanedNim || '(empty)', message: 'NIM/NPM/Nama/Token kosong.' })
           setImportProgress({ done: i + 1, total: importMasterList.length })
@@ -395,13 +454,15 @@ export default function AdminVotersPage() {
         const { error } = await supabase.rpc('admin_add_voter', {
           p_nim: cleanedNim,
           p_name: cleanedName,
+          p_faculty: cleanedFaculty,
+          p_major: cleanedMajor,
           p_access_code_plain: cleanedToken,
         })
 
         if (error) {
           errors.push({ nim: cleanedNim, message: friendlyError(error) })
         } else {
-          success.push({ nim: cleanedNim, name: cleanedName, token: cleanedToken })
+          success.push({ nim: cleanedNim, name: cleanedName, faculty: cleanedFaculty, major: cleanedMajor, token: cleanedToken })
         }
 
         setImportProgress({ done: i + 1, total: importMasterList.length })
@@ -419,29 +480,6 @@ export default function AdminVotersPage() {
     } finally {
       setImporting(false)
     }
-  }
-
-  const resetVoteStatus = async () => {
-    setToast({ open: false, message: '', variant: 'error', title: '' })
-    const cleanedNim = resetNim.trim()
-    if (!cleanedNim) {
-      setToast({ open: true, variant: 'warning', title: 'Periksa input', message: 'NIM/NPM wajib diisi.' })
-      return
-    }
-
-    setSubmitting(true)
-    const { error } = await supabase.from('voters').update({ has_voted: false }).eq('nim', cleanedNim)
-    if (error) {
-      setSubmitting(false)
-      setToast({ open: true, variant: 'error', title: 'Gagal reset status', message: friendlyError(error) })
-      return
-    }
-
-    setSubmitting(false)
-    setResetOpen(false)
-    setResetNim('')
-    setToast({ open: true, variant: 'success', title: 'Berhasil', message: 'Status memilih berhasil di-reset.' })
-    refresh()
   }
 
   return (
@@ -484,14 +522,13 @@ export default function AdminVotersPage() {
             <FileDown className="h-4 w-4" />
             Download Rekap
           </button>
-
           <button
             type="button"
-            onClick={() => setResetOpen(true)}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-amber-200 bg-white px-4 text-sm font-semibold text-amber-800 shadow-sm hover:bg-amber-50"
+            onClick={() => setDeleteAllOpen(true)}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 text-sm font-semibold text-red-700 hover:bg-red-50"
           >
-            <RotateCcw className="h-4 w-4" />
-            Reset Status
+            <Trash2 className="h-4 w-4" />
+            Hapus Semua
           </button>
 
           <button
@@ -519,16 +556,13 @@ export default function AdminVotersPage() {
             <div className="mt-2 text-sm text-amber-800">
               <div className="space-y-2">
                 <div>
-                  <strong>Tambah Manual:</strong> Isi NIM/NPM & Nama, biarkan kolom Token kosong untuk generate otomatis (12 karakter A-Z,a-z,0-9). Token asli ditampilkan sekali di toast; setelah itu hanya hash yang disimpan.
+                  <strong>Tambah Manual:</strong> Isi NIM/NPM, Nama, Fakultas & Prodi. Token 12 karakter di-generate otomatis dan ditampilkan di popup (copy segera, hanya muncul sekali).
                 </div>
                 <div>
-                  <strong>Import CSV:</strong> Format file <code>nim,name</code> (tanpa token). Sistem create token random untuk tiap baris, lalu tampilkan tombol Download CSV & Cetak PDF master list. Unduh/cetak segera dan simpan secara offline.
+                  <strong>Import CSV:</strong> Format file <code>nim,name,faculty,major</code>. Sistem generate token untuk tiap baris, lalu tampilkan tombol Download CSV & Cetak PDF master list.
                 </div>
                 <div>
-                  <strong>Distribusi Token:</strong> Kirim token ke pemilih via kanal aman. Jangan pernah re-upload token asli ke server; database hanya menyimpan hash BCrypt (tidak bisa dibalik).
-                </div>
-                <div>
-                  <strong>Reset Status:</strong> Gunakan fitur reset hanya untuk koreksi. Semua perubahan tercatat di audit log (<code>ADMIN_ACTION</code>) dengan NIM/NPM yang dimodifikasi.
+                  <strong>Distribusi Token:</strong> Kirim token ke pemilih via kanal aman. Database hanya menyimpan hash BCrypt (tidak bisa dibalik).
                 </div>
               </div>
               <div className="mt-3 rounded-lg border border-amber-300 bg-amber-100 px-3 py-2 text-xs font-medium text-amber-900">
@@ -562,6 +596,8 @@ export default function AdminVotersPage() {
               <tr>
                 <th className="px-4 py-3">NIM/NPM</th>
                 <th className="px-4 py-3">Nama</th>
+                <th className="px-4 py-3">Fakultas</th>
+                <th className="px-4 py-3">Prodi</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3 text-right">Aksi</th>
               </tr>
@@ -569,13 +605,13 @@ export default function AdminVotersPage() {
             <tbody className="divide-y divide-zinc-200">
               {loading ? (
                 <tr>
-                  <td className="px-4 py-4 text-zinc-500" colSpan={4}>
+                  <td className="px-4 py-4 text-zinc-500" colSpan={6}>
                     Memuat...
                   </td>
                 </tr>
               ) : pageItems.length === 0 ? (
                 <tr>
-                  <td className="px-4 py-4 text-zinc-500" colSpan={4}>
+                  <td className="px-4 py-4 text-zinc-500" colSpan={6}>
                     Tidak ada data.
                   </td>
                 </tr>
@@ -586,6 +622,8 @@ export default function AdminVotersPage() {
                     <td className="px-4 py-3">
                       <div className="font-semibold text-gov-blue">{v.name}</div>
                     </td>
+                    <td className="px-4 py-3 text-xs text-zinc-600">{v.faculty || '-'}</td>
+                    <td className="px-4 py-3 text-xs text-zinc-600">{v.major || '-'}</td>
                     <td className="px-4 py-3">
                       {v.has_voted ? (
                         <span className="inline-flex rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">
@@ -789,44 +827,6 @@ export default function AdminVotersPage() {
       </Modal>
 
       <Modal
-        open={resetOpen}
-        title="Reset Status Memilih (Debug Only)"
-        onClose={() => (submitting ? null : setResetOpen(false))}
-        footer={
-          <>
-            <button
-              type="button"
-              onClick={() => setResetOpen(false)}
-              disabled={submitting}
-              className="inline-flex h-11 items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
-            >
-              Batal
-            </button>
-            <button
-              type="button"
-              onClick={resetVoteStatus}
-              disabled={submitting}
-              className="inline-flex h-11 items-center justify-center rounded-xl bg-amber-600 px-4 text-sm font-semibold text-white shadow-sm hover:bg-amber-600/95 disabled:opacity-50"
-            >
-              {submitting ? 'Memproses...' : 'Reset'}
-            </button>
-          </>
-        }
-      >
-        <div className="text-sm text-zinc-700">Masukkan NIM/NPM yang akan di-reset (has_voted = false).</div>
-        <input
-          value={resetNim}
-          onChange={(e) => setResetNim(e.target.value)}
-          inputMode="numeric"
-          autoComplete="off"
-          className="mt-3 h-11 w-full rounded-xl border border-zinc-300 bg-white px-4 text-sm text-zinc-900 shadow-sm focus:border-gov-accent focus:outline-none focus:ring-4 focus:ring-gov-accent/15"
-        />
-        <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
-          Gunakan hanya untuk koreksi kesalahan input/pengujian. Ini dapat memengaruhi integritas pemilihan.
-        </div>
-      </Modal>
-
-      <Modal
         open={formOpen}
         title="Tambah Pemilih"
         onClose={() => (submitting ? null : setFormOpen(false))}
@@ -877,19 +877,77 @@ export default function AdminVotersPage() {
               className="mt-2 h-11 w-full rounded-xl border border-zinc-300 bg-white px-4 text-sm text-zinc-900 shadow-sm focus:border-gov-accent focus:outline-none focus:ring-4 focus:ring-gov-accent/15"
             />
           </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-zinc-700" htmlFor="v_faculty">
+                Fakultas
+              </label>
+              <input
+                id="v_faculty"
+                value={faculty}
+                onChange={(e) => setFaculty(e.target.value)}
+                autoComplete="off"
+                placeholder="Fakultas Ilmu Komputer"
+                className="mt-2 h-11 w-full rounded-xl border border-zinc-300 bg-white px-4 text-sm text-zinc-900 shadow-sm focus:border-gov-accent focus:outline-none focus:ring-4 focus:ring-gov-accent/15"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-zinc-700" htmlFor="v_major">
+                Prodi
+              </label>
+              <input
+                id="v_major"
+                value={major}
+                onChange={(e) => setMajor(e.target.value)}
+                autoComplete="off"
+                placeholder="Informatika"
+                className="mt-2 h-11 w-full rounded-xl border border-zinc-300 bg-white px-4 text-sm text-zinc-900 shadow-sm focus:border-gov-accent focus:outline-none focus:ring-4 focus:ring-gov-accent/15"
+              />
+            </div>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Token Generated Modal */}
+      <Modal
+        open={tokenModalOpen}
+        title="🎉 Pemilih Berhasil Ditambahkan"
+        onClose={() => setTokenModalOpen(false)}
+        footer={
+          <button
+            type="button"
+            onClick={() => setTokenModalOpen(false)}
+            className="inline-flex h-11 items-center justify-center rounded-xl bg-gov-accent px-6 text-sm font-semibold text-white shadow-sm hover:bg-gov-accent/95"
+          >
+            Tutup
+          </button>
+        }
+      >
+        <div className="space-y-4">
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+            <div className="text-sm font-semibold text-amber-800">⚠️ PENTING: Simpan Token Ini!</div>
+            <div className="mt-1 text-xs text-amber-700">Token hanya ditampilkan SEKALI dan tidak bisa dilihat lagi.</div>
+          </div>
           <div>
-            <label className="block text-sm font-medium text-zinc-700" htmlFor="v_token">
-              Token Asli
-            </label>
-            <input
-              id="v_token"
-              value={token}
-              onChange={(e) => setToken(e.target.value)}
-              type="password"
-              autoComplete="off"
-              className="mt-2 h-11 w-full rounded-xl border border-zinc-300 bg-white px-4 text-sm text-zinc-900 shadow-sm focus:border-gov-accent focus:outline-none focus:ring-4 focus:ring-gov-accent/15"
-            />
-            <div className="mt-2 text-xs text-zinc-500">Token akan di-hash di server melalui RPC (lebih aman).</div>
+            <div className="text-sm font-medium text-zinc-700">Kode Akses</div>
+            <div className="mt-2 flex items-center gap-2">
+              <input
+                type="text"
+                value={generatedToken}
+                readOnly
+                className="h-12 flex-1 rounded-xl border border-zinc-300 bg-zinc-50 px-4 text-lg font-mono font-bold text-gov-blue tracking-widest"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(generatedToken)
+                  setToast({ open: true, variant: 'success', title: 'Tersalin', message: 'Token berhasil disalin ke clipboard.' })
+                }}
+                className="inline-flex h-12 items-center justify-center rounded-xl bg-zinc-900 px-4 text-sm font-semibold text-white hover:bg-zinc-800"
+              >
+                Copy
+              </button>
+            </div>
           </div>
         </div>
       </Modal>
@@ -920,6 +978,43 @@ export default function AdminVotersPage() {
         }
       >
         <div className="text-sm text-zinc-700">Anda yakin menghapus pemilih NIM {deletingNim}?</div>
+      </Modal>
+
+      {/* Delete All Modal */}
+      <Modal
+        open={deleteAllOpen}
+        title="Hapus Semua Pemilih"
+        onClose={() => (submitting ? null : setDeleteAllOpen(false))}
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => setDeleteAllOpen(false)}
+              disabled={submitting}
+              className="inline-flex h-11 items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
+            >
+              Batal
+            </button>
+            <button
+              type="button"
+              onClick={deleteAllVoters}
+              disabled={submitting}
+              className="inline-flex h-11 items-center justify-center rounded-xl bg-red-600 px-4 text-sm font-semibold text-white shadow-sm hover:bg-red-600/95 disabled:opacity-50"
+            >
+              {submitting ? 'Menghapus...' : 'Hapus Semua'}
+            </button>
+          </>
+        }
+      >
+        <div className="space-y-3">
+          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3">
+            <div className="text-sm font-semibold text-red-800">⚠️ PERINGATAN!</div>
+            <div className="mt-1 text-xs text-red-700">Aksi ini tidak dapat dibatalkan. Semua data pemilih akan dihapus permanen.</div>
+          </div>
+          <div className="text-sm text-zinc-700">
+            Total pemilih yang akan dihapus: <span className="font-bold text-red-600">{voters.length}</span>
+          </div>
+        </div>
       </Modal>
     </>
   )

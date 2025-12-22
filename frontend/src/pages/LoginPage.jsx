@@ -78,10 +78,10 @@ export default function LoginPage() {
                   <Shield className="h-6 w-6" />
                 </div>
                 <h1 className="text-xl font-bold tracking-tight text-gov-blue sm:text-2xl">
-                  Masuk ke Bilik Suara
+                  Masuk ke Bilik Suara PEMIRA
                 </h1>
                 <p className="mt-2 text-sm text-zinc-600">
-                  Masukkan NIM/NPM dan Kode Akses dari panitia
+                  Masukkan NIM dan Kode Akses untuk memilih Ketua & Wakil BEM
                 </p>
               </div>
 

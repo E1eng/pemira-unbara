@@ -1,3 +1,11 @@
-nim,name
-22351001,Mahasiswa Satu
-22351002,Mahasiswa Dua
+nim,name,faculty,major
+22351001,Mahasiswa Satu,Fakultas Teknik,Informatika
+22351002,Mahasiswa Dua,Fakultas Ekonomi,Akuntansi
+22351003,Mahasiswa Tiga,Fakultas Teknik,Sipil
+22351004,Mahasiswa Empat,Fakultas Ekonomi,Akuntansi
+22351005,Mahasiswa Lima,Fakultas Ilmu Sosial dan Ilmu Politik,Ilmu Komunikasi
+22351006,Mahasiswa Enam,Fakultas Ekonomi,Akuntansi
+22351007,Mahasiswa Tujuh,Fakultas Ilmu Komputer,Informatika
+22351008,Mahasiswa Delapan,Fakultas Ilmu Sosial dan Ilmu Politik,Ilmu Komunikasi
+22351009,Mahasiswa Sembilan,Fakultas Teknik,Informatika
+22351010,Mahasiswa Sepuluh,Fakultas Ekonomi,Menejemen

@@ -43,6 +43,7 @@ export default function AdminDashboardPage() {
   const [voteCount, setVoteCount] = useState(null)
   const [votedCount, setVotedCount] = useState(null)
   const [recap, setRecap] = useState([])
+  const [participationStats, setParticipationStats] = useState([])
 
   const totalFromRecap = useMemo(() => recap.reduce((sum, r) => sum + r.total, 0), [recap])
 
@@ -84,6 +85,18 @@ export default function AdminDashboardPage() {
     return data
   }
 
+  // --- NEW: Helper for participation stats
+  const fetchParticipationStats = async () => {
+    const { data, error } = await supabase.rpc('get_participation_stats')
+    if (error || !data) return []
+    return data.map(d => ({
+      name: d.faculty,
+      voted: d.already_voted,
+      total: d.total_voters,
+      pct: d.participation_percentage
+    }))
+  }
+
   useEffect(() => {
     let cancelled = false
 
@@ -104,12 +117,20 @@ export default function AdminDashboardPage() {
         const recapMapped =
           !recapRes.error && Array.isArray(recapRes.data)
             ? recapRes.data
-                .map((r) => ({ name: r.candidate_name, total: Number(r.total_votes ?? 0) }))
-                .sort((a, b) => b.total - a.total)
+              .map((r) => ({
+                name: `No. ${r.candidate_number} ${r.chairman_name}`, // Show "No. 1 Name"
+                fullName: `${r.chairman_name} & ${r.vice_chairman_name}`,
+                total: Number(r.total_votes ?? 0)
+              }))
+              .sort((a, b) => b.total - a.total)
             : []
         const recapTotal = recapMapped.reduce((sum, r) => sum + r.total, 0)
 
         if (!cancelled && !recapRes.error) setRecap(recapMapped)
+
+        // Fetch Participation Stats
+        const partStats = await fetchParticipationStats()
+        if (!cancelled) setParticipationStats(partStats)
 
         const dptRes = await supabase.from('voters').select('*', { count: 'exact', head: true })
         if (!cancelled) {
@@ -382,6 +403,27 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
+      <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+        <div className="text-sm font-semibold text-gov-blue">Partisipasi per Fakultas</div>
+        <div className="mt-1 text-sm text-zinc-600">Persentase suara masuk berdasarkan fakultas.</div>
+
+        <div className="mt-4 h-64">
+          {participationStats.length === 0 ? (
+            <div className="flex h-full items-center justify-center text-sm text-zinc-500">Belum ada data partisipasi.</div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={participationStats} layout="vertical" margin={{ left: 40 }}>
+                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+                <XAxis type="number" domain={[0, 100]} />
+                <YAxis type="category" dataKey="name" width={100} style={{ fontSize: '11px' }} />
+                <Tooltip />
+                <Bar dataKey="pct" fill="#10b981" radius={[0, 4, 4, 0]} name="Partisipasi %" />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </div>
+
       {/* Security Notice moved to AdminVotersPage */}
 
       <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
@@ -399,7 +441,9 @@ export default function AdminDashboardPage() {
               return (
                 <div key={r.name} className="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-36 truncate text-sm font-semibold text-gov-blue">{r.name}</div>
+                    <div className="w-48 truncate text-sm font-semibold text-gov-blue" title={r.fullName}>
+                      {r.name}
+                    </div>
                     <div className="flex-1">
                       <div className="h-3 w-full rounded-full bg-zinc-200">
                         <div className="h-3 rounded-full bg-gov-accent" style={{ width: `${pct}%` }} />
@@ -413,46 +457,46 @@ export default function AdminDashboardPage() {
             })
           )}
         </div>
-      </div>
+      </div >
 
-     <Modal
-       open={confirmOpen}
-       title="Konfirmasi Perubahan"
-       onClose={() => (updatingField ? null : setConfirmOpen(false))}
-       footer={
-         <>
-           <button
-             type="button"
-             onClick={() => setConfirmOpen(false)}
-             disabled={Boolean(updatingField)}
-             className="inline-flex h-11 items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
-           >
-             Batal
-           </button>
-           <button
-             type="button"
-             onClick={confirmToggle}
-             disabled={Boolean(updatingField)}
-             className="inline-flex h-11 items-center justify-center rounded-xl bg-gov-accent px-4 text-sm font-semibold text-white shadow-sm hover:bg-gov-accent/95 disabled:opacity-50"
-           >
-             {updatingField ? 'Menyimpan...' : 'Ya, Lanjutkan'}
-           </button>
-         </>
-       }
-     >
-       <div className="text-sm text-zinc-700">
-         Anda yakin ingin mengubah:
-       </div>
-       <div className="mt-2 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-800">
-         <div className="font-semibold">{pendingToggle?.label}</div>
-         <div className="mt-1 text-xs text-zinc-600">
-           Nilai baru: <span className="font-mono">{String(pendingToggle?.nextValue)}</span>
-         </div>
-       </div>
-       <div className="mt-3 text-xs text-zinc-500">
-         Tindakan ini dapat memengaruhi pengalaman pemilih dan tampilan publik.
-       </div>
-     </Modal>
+      <Modal
+        open={confirmOpen}
+        title="Konfirmasi Perubahan"
+        onClose={() => (updatingField ? null : setConfirmOpen(false))}
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => setConfirmOpen(false)}
+              disabled={Boolean(updatingField)}
+              className="inline-flex h-11 items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
+            >
+              Batal
+            </button>
+            <button
+              type="button"
+              onClick={confirmToggle}
+              disabled={Boolean(updatingField)}
+              className="inline-flex h-11 items-center justify-center rounded-xl bg-gov-accent px-4 text-sm font-semibold text-white shadow-sm hover:bg-gov-accent/95 disabled:opacity-50"
+            >
+              {updatingField ? 'Menyimpan...' : 'Ya, Lanjutkan'}
+            </button>
+          </>
+        }
+      >
+        <div className="text-sm text-zinc-700">
+          Anda yakin ingin mengubah:
+        </div>
+        <div className="mt-2 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-800">
+          <div className="font-semibold">{pendingToggle?.label}</div>
+          <div className="mt-1 text-xs text-zinc-600">
+            Nilai baru: <span className="font-mono">{String(pendingToggle?.nextValue)}</span>
+          </div>
+        </div>
+        <div className="mt-3 text-xs text-zinc-500">
+          Tindakan ini dapat memengaruhi pengalaman pemilih dan tampilan publik.
+        </div>
+      </Modal>
     </>
   )
 }

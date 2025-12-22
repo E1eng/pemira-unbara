@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { NavLink, Navigate, Outlet, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, LogOut, Shield, Users, UserSquare2 } from 'lucide-react'
+import { FileText, LayoutDashboard, LogOut, Shield, Users, UserSquare2 } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient.js'
 
 function SidebarLink({ to, icon: Icon, children }) {
@@ -72,8 +72,8 @@ export default function AdminLayout() {
               <Shield className="h-5 w-5" />
             </div>
             <div className="min-w-0">
-              <div className="text-sm font-semibold text-white">Admin Panel</div>
-              <div className="text-xs text-zinc-300">Panitia Pemilihan Ketua BEM</div>
+              <div className="text-sm font-semibold text-white">PEMIRA BEM</div>
+              <div className="text-xs text-zinc-300">Panel Panitia Pemilihan</div>
             </div>
           </div>
 
@@ -82,10 +82,13 @@ export default function AdminLayout() {
               Dashboard
             </SidebarLink>
             <SidebarLink to="/admin/candidates" icon={UserSquare2}>
-              Kandidat
+              Paslon
             </SidebarLink>
             <SidebarLink to="/admin/voters" icon={Users}>
-              Daftar Pemilih (DPT)
+              DPT Mahasiswa
+            </SidebarLink>
+            <SidebarLink to="/admin/audit" icon={FileText}>
+              Audit Log
             </SidebarLink>
           </nav>
 
@@ -107,7 +110,7 @@ export default function AdminLayout() {
 
         <main className="flex-1 px-4 py-6 sm:px-6 sm:py-8">
           <div className="mb-4 flex items-center justify-between sm:hidden">
-            <div className="text-sm font-semibold">Admin Panel</div>
+            <div className="text-sm font-semibold">PEMIRA BEM</div>
             <button
               type="button"
               onClick={async () => {
@@ -160,6 +163,19 @@ export default function AdminLayout() {
                 }
               >
                 DPT
+              </NavLink>
+              <NavLink
+                to="/admin/audit"
+                className={({ isActive }) =>
+                  [
+                    'inline-flex h-10 items-center justify-center rounded-xl border text-xs font-semibold',
+                    isActive
+                      ? 'border-gov-accent bg-gov-accent text-white'
+                      : 'border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50',
+                  ].join(' ')
+                }
+              >
+                Audit
               </NavLink>
             </div>
           </div>

@@ -22,7 +22,9 @@ export default function AdminCandidatesPage() {
   const [editing, setEditing] = useState(null)
   const [deleting, setDeleting] = useState(null)
 
-  const [name, setName] = useState('')
+  const [candidateNumber, setCandidateNumber] = useState('')
+  const [chairmanName, setChairmanName] = useState('')
+  const [viceChairmanName, setViceChairmanName] = useState('')
   const [vision, setVision] = useState('')
   const [mission, setMission] = useState('')
   const [photoUrl, setPhotoUrl] = useState('')
@@ -31,7 +33,9 @@ export default function AdminCandidatesPage() {
 
   const resetForm = () => {
     setEditing(null)
-    setName('')
+    setCandidateNumber('')
+    setChairmanName('')
+    setViceChairmanName('')
     setVision('')
     setMission('')
     setPhotoUrl('')
@@ -53,7 +57,9 @@ export default function AdminCandidatesPage() {
 
   const openEdit = (c) => {
     setEditing(c)
-    setName(c.name ?? '')
+    setCandidateNumber(c.candidate_number ?? '')
+    setChairmanName(c.chairman_name ?? '')
+    setViceChairmanName(c.vice_chairman_name ?? '')
     setVision(c.vision ?? '')
     setMission(c.mission ?? '')
     setPhotoUrl(c.photo_url ?? '')
@@ -68,8 +74,8 @@ export default function AdminCandidatesPage() {
     // Try to fetch votes count via relationship
     const rel = await supabase
       .from('candidates')
-      .select('id, name, vision, mission, photo_url, votes(count)')
-      .order('id', { ascending: true })
+      .select('id, candidate_number, chairman_name, vice_chairman_name, vision, mission, photo_url, votes(count)')
+      .order('candidate_number', { ascending: true })
 
     if (!rel.error && Array.isArray(rel.data)) {
       setCandidates(rel.data)
@@ -83,8 +89,8 @@ export default function AdminCandidatesPage() {
       return
     }
 
-    // Fallback: fetch candidates + recap RPC (map by name)
-    const candRes = await supabase.from('candidates').select('*').order('id', { ascending: true })
+    // Fallback: fetch candidates + recap RPC (map by id)
+    const candRes = await supabase.from('candidates').select('*').order('candidate_number', { ascending: true })
     const recapRes = await supabase.rpc('get_vote_recap')
 
     if (!candRes.error && Array.isArray(candRes.data)) {
@@ -94,10 +100,10 @@ export default function AdminCandidatesPage() {
     }
 
     if (!recapRes.error && Array.isArray(recapRes.data) && Array.isArray(candRes.data)) {
-      const byName = new Map(recapRes.data.map((r) => [r.candidate_name, Number(r.total_votes ?? 0)]))
+      const byId = new Map(recapRes.data.map((r) => [r.candidate_id, Number(r.total_votes ?? 0)]))
       const m = new Map()
       candRes.data.forEach((c) => {
-        m.set(c.id, byName.get(c.name) ?? 0)
+        m.set(c.id, byId.get(c.id) ?? 0)
       })
       setVoteMap(m)
     }
@@ -147,8 +153,8 @@ export default function AdminCandidatesPage() {
   const saveCandidate = async () => {
     setToast({ open: false, message: '', variant: 'error', title: '', autoCloseMs: undefined })
 
-    if (!name.trim() || !vision.trim() || !mission.trim()) {
-      setToast({ open: true, variant: 'warning', title: 'Periksa input', message: 'Name, Vision, dan Mission wajib diisi.' })
+    if (!candidateNumber || !chairmanName.trim() || !viceChairmanName.trim() || !vision.trim() || !mission.trim()) {
+      setToast({ open: true, variant: 'warning', title: 'Periksa input', message: 'Semua form wajib diisi.' })
       return
     }
 
@@ -168,7 +174,15 @@ export default function AdminCandidatesPage() {
     if (editing) {
       const { error } = await supabase
         .from('candidates')
-        .update({ name: name.trim(), vision: vision.trim(), mission: mission.trim(), photo_url: finalPhotoUrl })
+        .update({
+          name: chairmanName.trim(), // Legacy field for backward compatibility
+          candidate_number: Number(candidateNumber),
+          chairman_name: chairmanName.trim(),
+          vice_chairman_name: viceChairmanName.trim(),
+          vision: vision.trim(),
+          mission: mission.trim(),
+          photo_url: finalPhotoUrl
+        })
         .eq('id', editing.id)
 
       if (error) {
@@ -179,7 +193,15 @@ export default function AdminCandidatesPage() {
     } else {
       const { error } = await supabase
         .from('candidates')
-        .insert({ name: name.trim(), vision: vision.trim(), mission: mission.trim(), photo_url: finalPhotoUrl })
+        .insert({
+          name: chairmanName.trim(), // Legacy field for backward compatibility
+          candidate_number: Number(candidateNumber),
+          chairman_name: chairmanName.trim(),
+          vice_chairman_name: viceChairmanName.trim(),
+          vision: vision.trim(),
+          mission: mission.trim(),
+          photo_url: finalPhotoUrl
+        })
 
       if (error) {
         setSubmitting(false)
@@ -270,22 +292,24 @@ export default function AdminCandidatesPage() {
           <table className="min-w-full text-sm">
             <thead className="bg-zinc-50 text-left text-xs font-semibold text-zinc-600">
               <tr>
+                <th className="px-4 py-3 w-16">No.</th>
                 <th className="px-4 py-3">Foto</th>
-                <th className="px-4 py-3">Nama</th>
-                <th className="px-4 py-3 text-right">Votes</th>
+                <th className="px-4 py-3">Pasangan Calon</th>
+                <th className="px-4 py-3">Visi</th>
+                <th className="px-4 py-3">Misi</th>
                 <th className="px-4 py-3 text-right">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-200">
               {loading ? (
                 <tr>
-                  <td className="px-4 py-4 text-zinc-500" colSpan={4}>
+                  <td className="px-4 py-4 text-zinc-500" colSpan={6}>
                     Memuat...
                   </td>
                 </tr>
               ) : sorted.length === 0 ? (
                 <tr>
-                  <td className="px-4 py-4 text-zinc-500" colSpan={4}>
+                  <td className="px-4 py-4 text-zinc-500" colSpan={6}>
                     Tidak ada data.
                   </td>
                 </tr>
@@ -293,17 +317,27 @@ export default function AdminCandidatesPage() {
                 sorted.map((c) => (
                   <tr key={c.id} className="hover:bg-zinc-50">
                     <td className="px-4 py-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gov-accent text-white font-bold text-lg">
+                        {c.candidate_number || '-'}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
                       <div className="h-12 w-12 overflow-hidden rounded-xl bg-zinc-100">
                         {c.photo_url ? (
-                          <img src={c.photo_url} alt={c.name} className="h-full w-full object-cover" />
+                          <img src={c.photo_url} alt={c.chairman_name} className="h-full w-full object-cover" />
                         ) : null}
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="font-semibold text-gov-blue">{c.name}</div>
-                      <div className="text-xs text-zinc-500">ID: {c.id}</div>
+                      <div className="font-semibold text-gov-blue">{c.chairman_name || 'Tidak ada nama'}</div>
+                      <div className="text-sm text-zinc-600">&amp; {c.vice_chairman_name || '-'}</div>
                     </td>
-                    <td className="px-4 py-3 text-right font-bold text-gov-blue">{voteMap.get(c.id) ?? 0}</td>
+                    <td className="px-4 py-3 max-w-[200px]">
+                      <div className="text-xs text-zinc-700 line-clamp-3">{c.vision || '-'}</div>
+                    </td>
+                    <td className="px-4 py-3 max-w-[200px]">
+                      <div className="text-xs text-zinc-700 line-clamp-3">{c.mission || '-'}</div>
+                    </td>
                     <td className="px-4 py-3">
                       <div className="flex justify-end gap-2">
                         <button
@@ -361,14 +395,39 @@ export default function AdminCandidatesPage() {
         }
       >
         <div className="space-y-3">
+          <div className="grid grid-cols-12 gap-3">
+            <div className="col-span-3">
+              <label className="block text-sm font-medium text-zinc-700" htmlFor="cand_number">
+                No. Urut
+              </label>
+              <input
+                id="cand_number"
+                type="number"
+                value={candidateNumber}
+                onChange={(e) => setCandidateNumber(e.target.value)}
+                className="mt-2 h-11 w-full rounded-xl border border-zinc-300 bg-white px-4 text-sm text-zinc-900 shadow-sm focus:border-gov-accent focus:outline-none focus:ring-4 focus:ring-gov-accent/15"
+              />
+            </div>
+            <div className="col-span-9">
+              <label className="block text-sm font-medium text-zinc-700" htmlFor="chairman_name">
+                Nama Calon Ketua
+              </label>
+              <input
+                id="chairman_name"
+                value={chairmanName}
+                onChange={(e) => setChairmanName(e.target.value)}
+                className="mt-2 h-11 w-full rounded-xl border border-zinc-300 bg-white px-4 text-sm text-zinc-900 shadow-sm focus:border-gov-accent focus:outline-none focus:ring-4 focus:ring-gov-accent/15"
+              />
+            </div>
+          </div>
           <div>
-            <label className="block text-sm font-medium text-zinc-700" htmlFor="cand_name">
-              Name
+            <label className="block text-sm font-medium text-zinc-700" htmlFor="vice_name">
+              Nama Calon Wakil Ketua
             </label>
             <input
-              id="cand_name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              id="vice_name"
+              value={viceChairmanName}
+              onChange={(e) => setViceChairmanName(e.target.value)}
               className="mt-2 h-11 w-full rounded-xl border border-zinc-300 bg-white px-4 text-sm text-zinc-900 shadow-sm focus:border-gov-accent focus:outline-none focus:ring-4 focus:ring-gov-accent/15"
             />
           </div>
@@ -463,7 +522,7 @@ export default function AdminCandidatesPage() {
         }
       >
         <div className="text-sm text-zinc-700">
-          Anda yakin menghapus kandidat <span className="font-semibold text-zinc-900">{deleting?.name}</span>?
+          Anda yakin menghapus paslon <span className="font-semibold text-zinc-900">{deleting?.chairman_name} & {deleting?.vice_chairman_name}</span>?
         </div>
       </Modal>
 

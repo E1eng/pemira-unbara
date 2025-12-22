@@ -1,3 +1,11 @@
-Name,NIM/NPM,Token
-Mahasiswa Satu,22351001,90aN5tRwND2D
-Mahasiswa Dua,22351002,1SMgA2hasmup
+NIM,Name,Faculty,Major,Token
+22351001,Mahasiswa Satu,Fakultas Teknik,Informatika,7dKOH0d4yUPg
+22351002,Mahasiswa Dua,Fakultas Ekonomi,Akuntansi,Y8seGWAHt81S
+22351003,Mahasiswa Tiga,Fakultas Teknik,Sipil,nMm7A2wgHgrh
+22351004,Mahasiswa Empat,Fakultas Ekonomi,Akuntansi,mtKjZ5N8GaVV
+22351005,Mahasiswa Lima,Fakultas Ilmu Sosial dan Ilmu Politik,Ilmu Komunikasi,goHcPzpGeyQU
+22351006,Mahasiswa Enam,Fakultas Ekonomi,Akuntansi,M9qBTOoKWitX
+22351007,Mahasiswa Tujuh,Fakultas Ilmu Komputer,Informatika,gcQVI5BxEtEJ
+22351008,Mahasiswa Delapan,Fakultas Ilmu Sosial dan Ilmu Politik,Ilmu Komunikasi,OzzRoDf4IEnG
+22351009,Mahasiswa Sembilan,Fakultas Teknik,Informatika,v4J72pkvk81e
+22351010,Mahasiswa Sepuluh,Fakultas Ekonomi,Menejemen,yELOsAYUJukr

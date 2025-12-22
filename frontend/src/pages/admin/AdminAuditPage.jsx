@@ -4,6 +4,8 @@ import Toast from '../../components/Toast.jsx'
 import { supabase } from '../../lib/supabaseClient.js'
 import { friendlyError } from '../../lib/friendlyError.js'
 
+const PAGE_SIZE = 20
+
 function parseDetails(details) {
   if (!details || typeof details !== 'object') return {}
   return details
@@ -20,6 +22,7 @@ export default function AdminAuditPage() {
   const [toast, setToast] = useState({ open: false, message: '', variant: 'error', title: '' })
   const [initialLoading, setInitialLoading] = useState(true)
   const [logs, setLogs] = useState([])
+  const [page, setPage] = useState(1)
 
   useEffect(() => {
     let cancelled = false
@@ -32,7 +35,7 @@ export default function AdminAuditPage() {
         setToast({ open: false, message: '', variant: 'error', title: '' })
       }
 
-      const { data, error } = await supabase.from('audit_logs').select('*').order('created_at', { ascending: false }).limit(200)
+      const { data, error } = await supabase.from('audit_logs').select('*').order('created_at', { ascending: false }).limit(500)
 
       if (cancelled) return
 
@@ -71,6 +74,12 @@ export default function AdminAuditPage() {
     })
   }, [logs])
 
+  const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE))
+  const paginatedRows = useMemo(() => {
+    const start = (page - 1) * PAGE_SIZE
+    return rows.slice(start, start + PAGE_SIZE)
+  }, [rows, page])
+
   return (
     <>
       <Toast
@@ -82,9 +91,9 @@ export default function AdminAuditPage() {
       />
 
       <div>
-        <div className="text-sm text-zinc-500">Thesis Highlight</div>
-        <h1 className="mt-1 text-xl font-bold tracking-tight text-gov-blue sm:text-2xl">Security Log (Audit Trail)</h1>
-        <div className="mt-2 text-sm text-zinc-600">Menampilkan aktivitas penting untuk OWASP A09 (Security Logging).</div>
+        <div className="text-sm text-zinc-500">Keamanan PEMIRA</div>
+        <h1 className="mt-1 text-xl font-bold tracking-tight text-gov-blue sm:text-2xl">Audit Log</h1>
+        <div className="mt-2 text-sm text-zinc-600">Catatan aktivitas penting untuk transparansi dan keamanan pemilihan.</div>
       </div>
 
       <div className="mt-6 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
@@ -111,7 +120,7 @@ export default function AdminAuditPage() {
                   </td>
                 </tr>
               ) : (
-                rows.map((r) => (
+                paginatedRows.map((r) => (
                   <tr key={r.id} className={[rowStyle(r.action), 'hover:bg-zinc-50'].join(' ')}>
                     <td className="px-4 py-3 whitespace-nowrap font-mono text-xs text-zinc-700">{r.time}</td>
                     <td className="px-4 py-3 whitespace-nowrap">
@@ -122,7 +131,7 @@ export default function AdminAuditPage() {
                       <div className="text-xs text-zinc-700">
                         {r.reason ? <div>Reason: {r.reason}</div> : null}
                         {r.ip ? <div>IP: {r.ip}</div> : null}
-                        {r.userAgent ? <div className="truncate">UA: {r.userAgent}</div> : null}
+                        {r.userAgent ? <div className="truncate max-w-xs">UA: {r.userAgent}</div> : null}
                         {!r.reason && !r.ip && !r.userAgent ? <div className="text-zinc-500">(no details)</div> : null}
                       </div>
                     </td>
@@ -133,6 +142,31 @@ export default function AdminAuditPage() {
           </table>
         </div>
       </div>
+
+      {/* Pagination */}
+      {rows.length > PAGE_SIZE && (
+        <div className="mt-4 flex items-center justify-center gap-4">
+          <button
+            type="button"
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page <= 1}
+            className="inline-flex h-10 items-center justify-center rounded-xl border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
+          >
+            Prev
+          </button>
+          <div className="text-sm font-semibold text-zinc-700">
+            Page {page} / {totalPages}
+          </div>
+          <button
+            type="button"
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={page >= totalPages}
+            className="inline-flex h-10 items-center justify-center rounded-xl border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+      )}
     </>
   )
 }
