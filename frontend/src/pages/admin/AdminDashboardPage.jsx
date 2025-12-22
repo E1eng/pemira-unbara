@@ -208,11 +208,6 @@ export default function AdminDashboardPage() {
     if (!pendingToggle) return
     const { field, nextValue } = pendingToggle
 
-    const prev = {
-      is_voting_open: isVotingOpen,
-      show_live_result: showLiveResult,
-    }
-
     if (field === 'is_voting_open') setIsVotingOpen(nextValue)
     if (field === 'show_live_result') setShowLiveResult(nextValue)
 
@@ -227,8 +222,8 @@ export default function AdminDashboardPage() {
         message: 'Pengaturan berhasil diperbarui.',
       })
     } else {
-      setIsVotingOpen(Boolean(prev.is_voting_open))
-      setShowLiveResult(Boolean(prev.show_live_result))
+      setIsVotingOpen((prev) => prev)
+      setShowLiveResult((prev) => prev)
     }
     setConfirmOpen(false)
     setPendingToggle(null)
@@ -307,14 +302,14 @@ export default function AdminDashboardPage() {
           </div>
 
           <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
-            <div className="text-sm font-semibold text-gov-blue">Publikasikan Hasil (Live Count)</div>
-            <div className="mt-1 text-xs text-zinc-600">Kontrol halaman publik <span className="font-mono">/live</span>.</div>
+            <div className="text-sm font-semibold text-gov-blue">Publikasikan Hasil (Rekap Publik)</div>
+            <div className="mt-1 text-xs text-zinc-600">Kontrol penayangan rekap pada halaman publik.</div>
             <button
               type="button"
               disabled={settingsLoading || updatingField === 'show_live_result'}
               onClick={async () => {
                 const next = !showLiveResult
-                openConfirm('show_live_result', next, 'Publikasikan Hasil (Live Count)')
+                openConfirm('show_live_result', next, 'Publikasikan Hasil (Rekap Publik)')
               }}
               className={[
                 'mt-3 inline-flex h-11 w-full items-center justify-center rounded-xl px-4 text-sm font-semibold transition-colors',
@@ -324,7 +319,7 @@ export default function AdminDashboardPage() {
                 (settingsLoading || updatingField === 'show_live_result') ? 'opacity-50' : '',
               ].join(' ')}
             >
-              {settingsLoading ? 'Memuat...' : updatingField === 'show_live_result' ? 'Menyimpan...' : showLiveResult ? 'SHOW RESULTS' : 'HIDE RESULTS'}
+              {settingsLoading ? 'Memuat...' : updatingField === 'show_live_result' ? 'Menyimpan...' : showLiveResult ? 'SEMBUNYIKAN' : 'TAYANGKAN'}
             </button>
           </div>
         </div>
@@ -386,6 +381,8 @@ export default function AdminDashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Security Notice moved to AdminVotersPage */}
 
       <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
         <div className="text-sm font-semibold text-gov-blue">Realtime Vote Recap</div>

@@ -68,8 +68,8 @@ export default function AdminVotersPage() {
     const cleanedName = name.trim()
     const cleanedToken = token.trim()
 
-    if (!cleanedNim || !cleanedName || !cleanedToken) {
-      setToast({ open: true, variant: 'warning', title: 'Periksa input', message: 'NIM/NPM, Nama, dan Token wajib diisi.' })
+    if (!cleanedNim || !cleanedName) {
+      setToast({ open: true, variant: 'warning', title: 'Periksa input', message: 'NIM/NPM dan Nama wajib diisi.' })
       return
     }
 
@@ -81,10 +81,11 @@ export default function AdminVotersPage() {
     setSubmitting(true)
 
     // CRITICAL: use RPC so token gets hashed
+    const finalToken = cleanedToken || generateSecureToken(6)
     const { error } = await supabase.rpc('admin_add_voter', {
       p_nim: cleanedNim,
       p_name: cleanedName,
-      p_access_code_plain: cleanedToken,
+      p_access_code_plain: finalToken,
     })
 
     if (error) {
@@ -96,7 +97,7 @@ export default function AdminVotersPage() {
     setSubmitting(false)
     setFormOpen(false)
     resetForm()
-    setToast({ open: true, variant: 'success', title: 'Berhasil', message: 'Pemilih berhasil ditambahkan.' })
+    setToast({ open: true, variant: 'success', title: 'Berhasil', message: `Pemilih berhasil ditambahkan. Token: ${finalToken}` })
     refresh()
   }
 
@@ -140,8 +141,8 @@ export default function AdminVotersPage() {
     return filtered.slice(start, start + PAGE_SIZE)
   }, [filtered, page])
 
-  const generateSecureToken = (length = 6) => {
-    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+  const generateSecureToken = (length = 8) => {
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
     const buf = new Uint8Array(length)
     window.crypto.getRandomValues(buf)
     let out = ''
@@ -346,7 +347,7 @@ export default function AdminVotersPage() {
     const used = new Set()
     const prepared = parsed
       .map((r) => {
-        let t = generateSecureToken(6)
+        let t = generateSecureToken(12)
         while (used.has(t)) t = generateSecureToken(6)
         used.add(t)
         return { nim: String(r.nim).trim(), name: String(r.name).trim(), token: t }
@@ -504,6 +505,37 @@ export default function AdminVotersPage() {
             <Plus className="h-4 w-4" />
             Tambah
           </button>
+        </div>
+      </div>
+
+      {/* Keamanan & Token Management */}
+      <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+        <div className="flex items-start gap-3">
+          <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-amber-100">
+            <div className="h-3 w-3 rounded-full bg-amber-600" />
+          </div>
+          <div className="flex-1">
+            <div className="text-sm font-semibold text-amber-900">Keamanan & Token Management</div>
+            <div className="mt-2 text-sm text-amber-800">
+              <div className="space-y-2">
+                <div>
+                  <strong>Tambah Manual:</strong> Isi NIM/NPM & Nama, biarkan kolom Token kosong untuk generate otomatis (12 karakter A-Z,a-z,0-9). Token asli ditampilkan sekali di toast; setelah itu hanya hash yang disimpan.
+                </div>
+                <div>
+                  <strong>Import CSV:</strong> Format file <code>nim,name</code> (tanpa token). Sistem create token random untuk tiap baris, lalu tampilkan tombol Download CSV & Cetak PDF master list. Unduh/cetak segera dan simpan secara offline.
+                </div>
+                <div>
+                  <strong>Distribusi Token:</strong> Kirim token ke pemilih via kanal aman. Jangan pernah re-upload token asli ke server; database hanya menyimpan hash BCrypt (tidak bisa dibalik).
+                </div>
+                <div>
+                  <strong>Reset Status:</strong> Gunakan fitur reset hanya untuk koreksi. Semua perubahan tercatat di audit log (<code>ADMIN_ACTION</code>) dengan NIM/NPM yang dimodifikasi.
+                </div>
+              </div>
+              <div className="mt-3 rounded-lg border border-amber-300 bg-amber-100 px-3 py-2 text-xs font-medium text-amber-900">
+                <strong>Peringatan:</strong> Jangan simpan master list token di repo atau cloud publik. Backup offline dengan enkripsi bila perlu.
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -676,7 +708,7 @@ export default function AdminVotersPage() {
       >
         <div className="space-y-3">
           <div className="text-sm text-zinc-700">
-            Sistem akan membuat token acak 6 karakter (A-Z,0-9) untuk setiap pemilih.
+            Sistem otomatis membuat token acak 12 karakter (A-Z, a-z, 0-9) untuk setiap pemilih.
           </div>
 
           <input

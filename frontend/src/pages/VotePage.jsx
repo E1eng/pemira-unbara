@@ -6,15 +6,16 @@ import Toast from '../components/Toast.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { supabase } from '../lib/supabaseClient.js'
 import { friendlyError } from '../lib/friendlyError.js'
+import { ArrowLeft, RefreshCw, LogOut, User, CheckCircle, AlertCircle, X, Eye } from 'lucide-react'
 
 function CandidateSkeleton() {
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm">
+    <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
       <div className="aspect-square w-full animate-pulse bg-zinc-200" />
       <div className="flex flex-1 flex-col gap-3 p-4">
         <div className="h-5 w-4/5 animate-pulse rounded bg-zinc-200" />
         <div className="h-4 w-3/5 animate-pulse rounded bg-zinc-200" />
-        <div className="mt-auto flex items-center gap-2 pt-1">
+        <div className="mt-auto flex gap-2 pt-1">
           <div className="h-11 flex-1 animate-pulse rounded-xl bg-zinc-200" />
           <div className="h-11 flex-1 animate-pulse rounded-xl bg-zinc-200" />
         </div>
@@ -127,16 +128,20 @@ export default function VotePage() {
 
   const statusBadge = useMemo(() => {
     if (settingsLoading) {
-      return { label: 'Memeriksa status voting…', className: 'border-zinc-200 bg-white text-zinc-700' }
+      return { label: 'Memeriksa status…', className: 'border-zinc-200 bg-white text-zinc-700', icon: RefreshCw }
     }
     if (isVotingOpen === false) {
-      return { label: 'Pemungutan suara ditutup', className: 'border-red-200 bg-red-50 text-red-800' }
+      return { label: 'Voting ditutup', className: 'border-red-200 bg-red-50 text-red-800', icon: X }
     }
     if (isVotingOpen === true) {
-      return { label: 'Pemungutan suara dibuka', className: 'border-emerald-200 bg-emerald-50 text-emerald-800' }
+      return { label: 'Voting dibuka', className: 'border-emerald-200 bg-emerald-50 text-emerald-800', icon: CheckCircle }
     }
-    return { label: 'Status voting tidak tersedia', className: 'border-amber-200 bg-amber-50 text-amber-900' }
+    return { label: 'Status tidak tersedia', className: 'border-amber-200 bg-amber-50 text-amber-900', icon: AlertCircle }
   }, [isVotingOpen, settingsLoading])
+
+  const goBack = () => {
+    navigate('/')
+  }
 
   const grid = useMemo(() => {
     if (loading && candidates.length === 0) {
@@ -152,7 +157,7 @@ export default function VotePage() {
       return (
         <div
           key={c.id}
-          className="group flex h-full flex-col overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm transition-shadow hover:shadow-md"
+          className="group flex h-full flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition-all hover:shadow-md hover:border-gov-accent/50"
         >
           <div className="relative aspect-square w-full bg-zinc-100">
             {showPhoto ? (
@@ -170,10 +175,12 @@ export default function VotePage() {
                 }}
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center text-sm text-zinc-500">Foto tidak tersedia</div>
+              <div className="flex h-full w-full items-center justify-center text-sm text-zinc-500">
+                <User className="h-8 w-8 text-zinc-400" />
+              </div>
             )}
-            <div className="absolute left-4 top-4 inline-flex items-center rounded-full border border-white/60 bg-white/80 px-3 py-1 text-xs font-semibold text-zinc-800 backdrop-blur">
-              Calon #{displayNo}
+            <div className="absolute left-3 top-3 inline-flex items-center rounded-full border border-white/60 bg-white/80 px-2 py-1 text-xs font-semibold text-zinc-800 backdrop-blur">
+              #{displayNo}
             </div>
           </div>
 
@@ -181,17 +188,18 @@ export default function VotePage() {
             <div className="min-w-0">
               <div className="truncate text-base font-semibold text-gov-blue">{c.name}</div>
               <div className="mt-1 truncate text-xs text-zinc-500">
-                {tagline || 'Tap “Lihat Detail” untuk melihat visi & misi.'}
+                {tagline || 'Tap detail untuk visi & misi'}
               </div>
             </div>
 
-            <div className="mt-auto flex items-center gap-2 pt-1">
+            <div className="mt-auto flex gap-2 pt-1">
               <button
                 type="button"
                 onClick={() => setDetailCandidate({ ...c, displayNo })}
-                className="inline-flex h-11 flex-1 items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 hover:bg-zinc-50"
+                className="inline-flex h-10 flex-1 items-center justify-center rounded-xl border border-zinc-200 bg-white px-3 text-xs font-medium text-zinc-700 hover:bg-zinc-50"
               >
-                Lihat Detail
+                <Eye className="mr-1 h-3 w-3" />
+                Detail
               </button>
               <button
                 type="button"
@@ -200,7 +208,7 @@ export default function VotePage() {
                   setConfirmOpen(true)
                 }}
                 disabled={isVotingOpen === false || settingsLoading}
-                className="inline-flex h-11 flex-1 items-center justify-center rounded-xl bg-gov-accent px-4 text-sm font-semibold text-white shadow-sm hover:bg-gov-accent/95 focus:outline-none focus:ring-4 focus:ring-gov-accent/20 disabled:cursor-not-allowed disabled:bg-zinc-300 disabled:shadow-none"
+                className="inline-flex h-10 flex-1 items-center justify-center rounded-xl bg-gov-accent px-3 text-xs font-semibold text-white shadow-sm hover:bg-gov-accent/95 focus:outline-none focus:ring-4 focus:ring-gov-accent/20 disabled:cursor-not-allowed disabled:bg-zinc-300 disabled:shadow-none"
               >
                 Pilih
               </button>
@@ -218,7 +226,6 @@ export default function VotePage() {
       return
     }
 
-    // Re-check status voting right before submit (handles case when admin closes voting while user page is open)
     const settingsRes = await supabase
       .from('election_settings')
       .select('is_voting_open')
@@ -230,7 +237,7 @@ export default function VotePage() {
       setIsVotingOpen(open)
       if (!open) {
         setConfirmOpen(false)
-        setToast({ open: true, variant: 'warning', title: 'Pemungutan suara ditutup', message: 'Pemungutan suara sedang ditutup.' })
+        setToast({ open: true, variant: 'warning', title: 'Voting ditutup', message: 'Pemungutan suara sedang ditutup.' })
         return
       }
     }
@@ -297,67 +304,110 @@ export default function VotePage() {
         onClose={() => setToast((prev) => ({ ...prev, open: false }))}
       />
 
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
-          <div className="text-sm text-zinc-500">Bilik suara digital</div>
-          <h1 className="mt-1 text-xl font-bold tracking-tight text-gov-blue sm:text-2xl">Pilih Kandidat</h1>
-          <div className="mt-2 text-sm text-zinc-600">Pilih satu kandidat. Setelah mengirim suara, pilihan tidak dapat diubah.</div>
+      {/* Mobile Header */}
+      <div className="mb-6 flex items-center justify-between gap-3 sm:hidden">
+        <button
+          onClick={goBack}
+          className="flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </button>
+        <h1 className="text-lg font-semibold text-gov-blue">Pilih Kandidat</h1>
+        <button
+          onClick={() => {
+            logout()
+            navigate('/', { replace: true })
+          }}
+          className="flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50"
+        >
+          <LogOut className="h-5 w-5" />
+        </button>
+      </div>
 
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <div className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${statusBadge.className}`}
-            >
-              {statusBadge.label}
-            </div>
-            {nikMasked ? (
-              <div className="inline-flex items-center rounded-full border border-zinc-200 bg-white px-3 py-1 text-xs font-semibold text-zinc-700">
-                NIM/NPM: {nikMasked}
+      <div className="space-y-6">
+        {/* Header Section - Mobile Optimized */}
+        <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
+              <div className="text-sm text-zinc-500">Bilik suara digital</div>
+              <h1 className="mt-1 text-xl font-bold tracking-tight text-gov-blue sm:text-2xl">Pilih Kandidat</h1>
+              <div className="mt-2 text-sm text-zinc-600">Pilih satu kandidat. Suara tidak dapat diubah.</div>
+
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <div className={`inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold ${statusBadge.className}`}
+                >
+                  {statusBadge.icon && <statusBadge.icon className="mr-1 h-3 w-3" />}
+                  {statusBadge.label}
+                </div>
+                {nimMasked ? (
+                  <div className="inline-flex items-center rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700">
+                    <User className="mr-1 h-3 w-3" />
+                    {nimMasked}
+                  </div>
+                ) : null}
+                {refreshing ? <div className="text-xs font-medium text-zinc-500">Memperbarui…</div> : null}
               </div>
-            ) : null}
-            {refreshing ? <div className="text-xs font-medium text-zinc-500">Memperbarui…</div> : null}
-            {lastUpdatedAt ? (
-              <div className="text-xs text-zinc-500">Diperbarui: {lastUpdatedAt.toLocaleTimeString('id-ID')}</div>
-            ) : null}
+            </div>
+
+            <div className="hidden items-center gap-2 sm:flex">
+              <button
+                type="button"
+                onClick={() => setRefreshNonce((n) => n + 1)}
+                disabled={refreshing}
+                className="inline-flex h-10 items-center justify-center rounded-xl border border-zinc-200 bg-white px-3 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+                Refresh
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  logout()
+                  navigate('/', { replace: true })
+                }}
+                className="inline-flex h-10 items-center justify-center rounded-xl border border-zinc-200 bg-white px-3 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+              >
+                Keluar
+              </button>
+            </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        {/* Empty State */}
+        {candidates.length === 0 && !loading ? (
+          <div className="rounded-2xl border border-zinc-200 bg-white p-6 text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-zinc-100">
+              <User className="h-6 w-6 text-zinc-400" />
+            </div>
+            <div className="mt-4 text-base font-semibold text-gov-blue">Belum ada kandidat</div>
+            <div className="mt-1 text-sm text-zinc-600">Data kandidat belum tersedia</div>
+            <button
+              type="button"
+              onClick={() => setRefreshNonce((n) => n + 1)}
+              className="mt-4 inline-flex h-11 items-center justify-center rounded-xl bg-gov-accent px-4 text-sm font-semibold text-white shadow-sm hover:bg-gov-accent/95"
+            >
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Refresh
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">{grid}</div>
+        )}
+
+        {/* Mobile Refresh Button */}
+        <div className="fixed bottom-24 right-4 z-30 sm:hidden">
           <button
             type="button"
             onClick={() => setRefreshNonce((n) => n + 1)}
             disabled={refreshing}
-            className="inline-flex h-10 items-center justify-center rounded-xl border border-zinc-200 bg-white px-3 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-gov-accent text-white shadow-lg hover:bg-gov-accent/95 disabled:opacity-50"
           >
-            Refresh
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              logout()
-              navigate('/', { replace: true })
-            }}
-            className="inline-flex h-10 items-center justify-center rounded-xl border border-zinc-200 bg-white px-3 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
-          >
-            Keluar
+            <RefreshCw className={`h-5 w-5 ${refreshing ? 'animate-spin' : ''}`} />
           </button>
         </div>
       </div>
 
-      {candidates.length === 0 && !loading ? (
-        <div className="mt-10 rounded-3xl border border-zinc-200 bg-white p-6 text-center">
-          <div className="text-base font-semibold text-gov-blue">Belum ada kandidat</div>
-          <div className="mt-1 text-sm text-zinc-600">Data kandidat belum tersedia. Silakan refresh.</div>
-          <button
-            type="button"
-            onClick={() => setRefreshNonce((n) => n + 1)}
-            className="mt-4 inline-flex h-11 items-center justify-center rounded-xl bg-gov-accent px-4 text-sm font-semibold text-white shadow-sm hover:bg-gov-accent/95"
-          >
-            Refresh kandidat
-          </button>
-        </div>
-      ) : (
-        <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">{grid}</div>
-      )}
-
+      {/* Detail Modal - Mobile Optimized */}
       <Modal
         open={Boolean(detailCandidate)}
         title="Detail Kandidat"
@@ -404,7 +454,9 @@ export default function VotePage() {
                 }}
               />
             ) : (
-              <div className="flex aspect-square w-full items-center justify-center text-sm text-zinc-500">Foto tidak tersedia</div>
+              <div className="flex aspect-square w-full items-center justify-center text-sm text-zinc-500">
+                <User className="h-12 w-12 text-zinc-400" />
+              </div>
             )}
           </div>
 
@@ -415,18 +467,19 @@ export default function VotePage() {
 
           <div className="rounded-2xl border border-zinc-200 bg-white p-4">
             <div className="text-sm font-semibold text-zinc-900">Visi</div>
-            <div className="mt-1 text-sm leading-relaxed text-zinc-700">
+            <div className="mt-2 text-sm leading-relaxed text-zinc-700">
               {detailCandidate?.vision || <span className="text-zinc-500">Belum tersedia.</span>}
             </div>
 
             <div className="mt-4 text-sm font-semibold text-zinc-900">Misi</div>
-            <div className="mt-1 text-sm leading-relaxed text-zinc-700">
+            <div className="mt-2 text-sm leading-relaxed text-zinc-700">
               {detailCandidate?.mission || <span className="text-zinc-500">Belum tersedia.</span>}
             </div>
           </div>
         </div>
       </Modal>
 
+      {/* Confirm Modal - Mobile Optimized */}
       <Modal
         open={confirmOpen}
         title="Konfirmasi Pilihan"
@@ -447,7 +500,14 @@ export default function VotePage() {
               disabled={submitting}
               className="inline-flex h-11 items-center justify-center rounded-xl bg-gov-accent px-4 text-sm font-semibold text-white shadow-sm hover:bg-gov-accent/95 disabled:opacity-50"
             >
-              {submitting ? 'Memproses...' : 'Kirim Suara'}
+              {submitting ? (
+                <div className="flex items-center gap-2">
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                  <span>Memproses...</span>
+                </div>
+              ) : (
+                'Kirim Suara'
+              )}
             </button>
           </>
         }
@@ -463,9 +523,13 @@ export default function VotePage() {
             </div>
           </div>
 
-          <div className="text-sm leading-relaxed text-zinc-700">
-            Pastikan pilihan Anda sudah benar. Setelah menekan <span className="font-semibold">Kirim Suara</span>, suara akan
-            direkam dan tidak dapat diubah.
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600" />
+              <div className="text-sm leading-relaxed text-amber-900">
+                <strong>Perhatian:</strong> Pastikan pilihan Anda sudah benar. Setelah menekan <span className="font-semibold">Kirim Suara</span>, suara akan direkam dan tidak dapat diubah.
+              </div>
+            </div>
           </div>
         </div>
       </Modal>

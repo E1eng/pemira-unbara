@@ -197,12 +197,11 @@ with check (true);
 -- 4. LOGIKA BISNIS (STORED PROCEDURES / RPC)
 -- =============================================
 
--- FUNGSI 1: IMPORT DPT (Dipakai Admin/Panitia)
--- Fungsi ini otomatis meng-hash kode akses sebelum disimpan ke DB.
+-- FUNGSI 1: IMPORT DPT (Dipakai Admin/Panitia) — HASH token di server
 create or replace function admin_add_voter(
   p_nim text,
   p_name text,
-  p_access_code_plain text -- Kode asli (misal: "X7K9L")
+  p_access_code_plain text
 ) returns void as $$
 begin
   if not is_admin() then
@@ -211,23 +210,23 @@ begin
 
   insert into voters (nim, name, access_code_hash)
   values (
-    p_nim, 
-    p_name, 
-    crypt(p_access_code_plain, gen_salt('bf')) -- Enkripsi pakai BCrypt
+    p_nim,
+    p_name,
+    crypt(p_access_code_plain, extensions.gen_salt('bf'))
   );
 
   insert into audit_logs (action, details)
   values ('ADMIN_ACTION', jsonb_build_object('action', 'ADD_VOTER', 'nim', p_nim));
 end;
-$$ language plpgsql security definer set search_path = public;
+$$ language plpgsql security definer set search_path = public, extensions;
 
 -- FUNGSI 2: CORE VOTING MECHANISM (Jantung Aplikasi)
--- Fungsi ini menangani: Validasi, Cek Double Vote, dan Insert Suara dalam 1 Transaksi.
+-- Validasi, rate limit, update status has_voted, insert suara anonim (hanya candidate_id), audit log
 create or replace function submit_vote(
   p_nim text,
   p_access_code_plain text,
   p_candidate_id bigint,
-  p_client_info jsonb -- Data IP/Browser dari frontend
+  p_client_info jsonb
 ) returns jsonb as $$
 declare
   v_voter voters%rowtype;
@@ -272,10 +271,7 @@ begin
     raise exception 'Terlalu banyak percobaan dari jaringan Anda. Silakan tunggu beberapa menit lalu coba lagi.';
   end if;
 
-  -- 1. Cari data voter berdasarkan NIM
   select * into v_voter from voters where nim = p_nim for update;
-
-  -- 2. Validasi: Apakah NIM ada?
   if not found then
     if exists (select 1 from vote_rate_limits where client_key = v_client_key) then
       update vote_rate_limits
@@ -308,7 +304,6 @@ begin
     raise exception 'NIM tidak terdaftar dalam DPT.';
   end if;
 
-  -- 3. Validasi: Apakah Password/Token Benar? (Cek Hash)
   if v_voter.access_code_hash != crypt(p_access_code_plain, v_voter.access_code_hash) then
     if exists (select 1 from vote_rate_limits where client_key = v_client_key) then
       update vote_rate_limits
@@ -349,27 +344,30 @@ begin
     raise exception 'Kode Akses salah. Silakan cek surat undangan.';
   end if;
 
-  -- 4. Validasi: Apakah Sudah Memilih? (Cegah Double Voting)
   if v_voter.has_voted then
     insert into audit_logs (action, details) values ('LOGIN_FAIL', p_client_info || jsonb_build_object('reason', 'Already Voted', 'nim', p_nim));
     raise exception 'Maaf, NIM ini sudah digunakan untuk memilih.';
   end if;
 
-  -- 5. EKSEKUSI (Jika semua lolos)
   delete from vote_rate_limits where client_key = v_client_key;
 
-  -- Update status pemilih
   update voters set has_voted = true where nim = p_nim;
-  
-  -- Masukkan suara (Tanpa identitas pemilih)
   insert into votes (candidate_id) values (p_candidate_id);
-  
-  -- Catat Log Sukses
-  insert into audit_logs (action, details) values ('VOTE_SUCCESS', jsonb_build_object('event', 'VOTE_SUCCESS'));
+
+  insert into audit_logs (action, details)
+  values (
+    'VOTE_SUCCESS',
+    jsonb_build_object(
+      'event', 'VOTE_SUCCESS',
+      'ip', v_ip,
+      'userAgent', v_ua,
+      'nim', p_nim
+    )
+  );
 
   return jsonb_build_object('status', 'success', 'message', 'Terima kasih, suara Anda telah direkam.');
 end;
-$$ language plpgsql security definer set search_path = public;
+$$ language plpgsql security definer set search_path = public, extensions;
 
 -- FUNGSI 3: DASHBOARD REKAP (Realtime Count)
 -- Mengambil hasil suara tanpa perlu download ribuan baris data (Efisien)
@@ -387,6 +385,54 @@ begin
 end;
 $$ language plpgsql security definer set search_path = public;
 
+-- FUNGSI 4: VALIDASI LOGIN TANPA EFEK SAMPING
+create or replace function validate_voter(
+  p_nim text,
+  p_access_code_plain text
+) returns jsonb as $$
+declare
+  v_voter voters%rowtype;
+begin
+  select * into v_voter from voters where nim = p_nim;
+  if not found then
+    return jsonb_build_object('ok', false, 'reason', 'NIM tidak terdaftar dalam DPT.');
+  end if;
+
+  if v_voter.access_code_hash != crypt(p_access_code_plain, v_voter.access_code_hash) then
+    return jsonb_build_object('ok', false, 'reason', 'Kode Akses salah.');
+  end if;
+
+  if v_voter.has_voted then
+    return jsonb_build_object('ok', false, 'reason', 'NIM ini sudah digunakan untuk memilih.');
+  end if;
+
+  return jsonb_build_object('ok', true, 'has_voted', v_voter.has_voted);
+end;
+$$ language plpgsql security definer set search_path = public, extensions;
+
+-- FUNGSI 5: IMPORT DPT (HASH TOKEN DI SERVER)
+create or replace function admin_add_voter(
+  p_nim text,
+  p_name text,
+  p_access_code_plain text
+) returns void as $$
+begin
+  if not is_admin() then
+    raise exception 'Unauthorized';
+  end if;
+
+  insert into voters (nim, name, access_code_hash)
+  values (
+    p_nim,
+    p_name,
+    crypt(p_access_code_plain, extensions.gen_salt('bf'))
+  );
+
+  insert into audit_logs (action, details)
+  values ('ADMIN_ACTION', jsonb_build_object('action', 'ADD_VOTER', 'nim', p_nim));
+end;
+$$ language plpgsql security definer set search_path = public, extensions;
+
 revoke all on function admin_add_voter(text, text, text) from public;
 grant execute on function admin_add_voter(text, text, text) to authenticated;
 
@@ -395,6 +441,9 @@ grant execute on function submit_vote(text, text, bigint, jsonb) to anon, authen
 
 revoke all on function get_vote_recap() from public;
 grant execute on function get_vote_recap() to anon, authenticated;
+
+revoke all on function validate_voter(text, text) from public;
+grant execute on function validate_voter(text, text) to anon, authenticated;
 
 -- =============================================
 -- 5. DATA DUMMY (Untuk Test Awal)

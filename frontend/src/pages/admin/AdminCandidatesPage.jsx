@@ -15,6 +15,7 @@ export default function AdminCandidatesPage() {
 
   const [formOpen, setFormOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deleteAllOpen, setDeleteAllOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
 
@@ -212,6 +213,21 @@ export default function AdminCandidatesPage() {
     refresh()
   }
 
+  const confirmDeleteAll = async () => {
+    setSubmitting(true)
+    // hapus semua kandidat (akan cascade delete votes)
+    const { error } = await supabase.from('candidates').delete().gte('id', 0)
+    if (error) {
+      setSubmitting(false)
+      setToast({ open: true, variant: 'error', title: 'Gagal menghapus semua', message: friendlyError(error) })
+      return
+    }
+    setSubmitting(false)
+    setDeleteAllOpen(false)
+    setToast({ open: true, variant: 'success', title: 'Berhasil', message: 'Semua kandidat telah dihapus.', autoCloseMs: 2500 })
+    refresh()
+  }
+
   return (
     <>
       <Toast
@@ -229,14 +245,24 @@ export default function AdminCandidatesPage() {
           <h1 className="mt-1 text-xl font-bold tracking-tight text-gov-blue sm:text-2xl">Kandidat</h1>
           <div className="mt-2 text-sm text-zinc-600">Tambah, ubah, atau hapus kandidat.</div>
         </div>
-        <button
-          type="button"
-          onClick={openCreate}
-          className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-gov-accent px-4 text-sm font-semibold text-white shadow-sm hover:bg-gov-accent/95"
-        >
-          <Plus className="h-4 w-4" />
-          Tambah
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setDeleteAllOpen(true)}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 text-sm font-semibold text-red-700 hover:bg-red-50"
+          >
+            <Trash2 className="h-4 w-4" />
+            Hapus Semua
+          </button>
+          <button
+            type="button"
+            onClick={openCreate}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-gov-accent px-4 text-sm font-semibold text-white shadow-sm hover:bg-gov-accent/95"
+          >
+            <Plus className="h-4 w-4" />
+            Tambah
+          </button>
+        </div>
       </div>
 
       <div className="mt-6 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
@@ -438,6 +464,39 @@ export default function AdminCandidatesPage() {
       >
         <div className="text-sm text-zinc-700">
           Anda yakin menghapus kandidat <span className="font-semibold text-zinc-900">{deleting?.name}</span>?
+        </div>
+      </Modal>
+
+      <Modal
+        open={deleteAllOpen}
+        title="Hapus Semua Kandidat"
+        onClose={() => (submitting ? null : setDeleteAllOpen(false))}
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => setDeleteAllOpen(false)}
+              disabled={submitting}
+              className="inline-flex h-11 items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
+            >
+              Batal
+            </button>
+            <button
+              type="button"
+              onClick={confirmDeleteAll}
+              disabled={submitting}
+              className="inline-flex h-11 items-center justify-center rounded-xl bg-red-600 px-4 text-sm font-semibold text-white shadow-sm hover:bg-red-600/95 disabled:opacity-50"
+            >
+              {submitting ? 'Menghapus...' : 'Hapus Semua'}
+            </button>
+          </>
+        }
+      >
+        <div className="space-y-2 text-sm text-zinc-700">
+          <div>Tindakan ini akan menghapus semua kandidat dan seluruh suara terkait (cascade).</div>
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
+            Pastikan Anda telah mengekspor data yang diperlukan sebelum melanjutkan.
+          </div>
         </div>
       </Modal>
     </>

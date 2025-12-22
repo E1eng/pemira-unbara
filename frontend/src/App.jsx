@@ -1,6 +1,5 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext.jsx'
-import LivePage from './pages/LivePage.jsx'
 import HomePage from './pages/HomePage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import ResultsPage from './pages/ResultsPage.jsx'
@@ -30,7 +29,6 @@ export default function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/live" element={<LivePage />} />
           <Route path="/results" element={<ResultsPage />} />
           <Route path="/thank-you" element={<ThankYouPage />} />
           <Route
