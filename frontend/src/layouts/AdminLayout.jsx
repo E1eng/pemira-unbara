@@ -4,6 +4,7 @@ import { FileText, LayoutDashboard, LogOut, Shield, Users, UserSquare2 } from 'l
 import { supabase } from '../lib/supabaseClient.js'
 import nprogress from 'nprogress'
 import 'nprogress/nprogress.css'
+import logo from '../assets/logo-bem.png'
 
 function SidebarLink({ to, icon: Icon, children }) {
   return (
@@ -98,9 +99,7 @@ export default function AdminLayout() {
         {/* Changed to sticky so it stays in view, and restoring sm:flex to match original behavior */}
         <aside className="hidden w-64 shrink-0 flex-col bg-gov-blue px-4 py-5 sm:flex sticky top-0 h-dvh overflow-y-auto self-start">
           <div className="flex items-center gap-3 px-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-white">
-              <Shield className="h-5 w-5" />
-            </div>
+            <img src={logo} alt="Logo" className="h-10 w-auto object-contain bg-white/10 rounded-lg p-1" />
             <div className="min-w-0">
               <div className="text-sm font-semibold text-white">PEMIRA BEM</div>
               <div className="text-xs text-zinc-300">Panel Panitia Pemilihan</div>
@@ -141,8 +140,9 @@ export default function AdminLayout() {
         {/* Content Area */}
         <div className="flex-1 flex flex-col min-w-0">
           {/* Mobile Top Header */}
-          <div className="sticky top-0 z-30 flex items-center justify-between bg-white/90 backdrop-blur-md px-4 py-3 border-b border-zinc-200 shadow-sm sm:hidden text-center">
-            <div className="font-bold text-gov-blue w-full">Panel Admin</div>
+          <div className="sticky top-0 z-30 flex items-center justify-center bg-white/90 backdrop-blur-md px-4 py-3 border-b border-zinc-200 shadow-sm sm:hidden">
+            <img src={logo} alt="Logo" className="h-8 w-auto object-contain mr-2" />
+            <div className="font-bold text-gov-blue">Panel Admin</div>
           </div>
 
           <main className="flex-1 px-4 py-6 sm:px-6 sm:py-8">

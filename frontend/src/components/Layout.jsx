@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useEffect } from 'react'
 import nprogress from 'nprogress'
 import 'nprogress/nprogress.css'
+import logo from '../assets/logo-bem.png'
 
 nprogress.configure({ showSpinner: false })
 
@@ -23,8 +24,8 @@ export default function Layout({ children }) {
   const linkClass = (href) => {
     const isActive = (href === '/' && path === '/') || (href !== '/' && path === href)
     return `relative inline-flex h-9 items-center justify-center rounded-full px-4 text-sm font-medium transition-all duration-200 ${isActive
-        ? 'bg-gov-accent text-white shadow-sm ring-1 ring-indigo-500/20'
-        : 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100'
+      ? 'bg-gov-accent text-white shadow-sm ring-1 ring-indigo-500/20'
+      : 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100'
       }`
   }
 
@@ -35,9 +36,7 @@ export default function Layout({ children }) {
         <div className="mx-auto max-w-5xl px-4 py-3 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-10">
             <Link to="/" className="flex items-center gap-2.5 group">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-md shadow-indigo-200 transition-transform group-hover:scale-105">
-                <Landmark className="h-4 w-4" />
-              </div>
+              <img src={logo} alt="Logo BEM" className="h-8 w-auto object-contain transition-transform group-hover:scale-105" />
               <div>
                 <div className="text-sm font-bold leading-none text-gov-blue tracking-tight group-hover:text-gov-accent transition-colors">E-Voting BEM</div>
                 <div className="text-[10px] font-medium text-zinc-400 leading-none mt-0.5">Sistem Pemilihan</div>
@@ -61,7 +60,7 @@ export default function Layout({ children }) {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.25, ease: 'easeOut' }}
+            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }} // Custom easing for premium feel
             className="h-full"
           >
             {children}

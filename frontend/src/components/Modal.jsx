@@ -17,7 +17,7 @@ export default function Modal({ open, title, children, footer, onClose }) {
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
             className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl"
           >
             <div className="px-5 py-4 sm:px-6 border-b border-zinc-100">

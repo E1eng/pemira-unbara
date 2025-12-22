@@ -2,7 +2,8 @@
 
 :root {
   font-family: 'Inter', system-ui, sans-serif;
-  font-feature-settings: 'rlig' 1, 'calt' 1; /* Ligatures for cleaner text */
+  font-feature-settings: 'rlig' 1, 'calt' 1;
+  /* Ligatures for cleaner text */
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -14,6 +15,10 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
   html,
   body {
     height: 100%;

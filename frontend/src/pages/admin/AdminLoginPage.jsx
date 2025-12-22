@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Shield } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient.js'
+import logo from '../../assets/logo-bem.png'
 
 export default function AdminLoginPage() {
   const navigate = useNavigate()
@@ -63,9 +64,7 @@ export default function AdminLoginPage() {
         <div className="w-full max-w-md">
           <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-lg sm:p-8">
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gov-blue text-white">
-                <Shield className="h-6 w-6" />
-              </div>
+              <img src={logo} alt="Logo" className="h-11 w-auto object-contain" />
               <div>
                 <div className="text-lg font-bold tracking-tight">PEMIRA BEM</div>
                 <div className="text-sm text-zinc-600">Login Panitia Pemilihan</div>
