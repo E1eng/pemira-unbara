@@ -317,7 +317,7 @@ export default function AdminCandidatesPage() {
                 sorted.map((c) => (
                   <tr key={c.id} className="hover:bg-zinc-50">
                     <td className="px-4 py-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gov-accent text-white font-bold text-lg">
+                      <div className="items-center justify-center text-black font-bold text-lg">
                         {c.candidate_number || '-'}
                       </div>
                     </td>

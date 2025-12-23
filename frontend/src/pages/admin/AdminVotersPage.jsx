@@ -497,7 +497,7 @@ export default function AdminVotersPage() {
         <div>
           <div className="text-sm text-zinc-500">Manajemen</div>
           <h1 className="mt-1 text-xl font-bold tracking-tight text-gov-blue sm:text-2xl">DPT (Pemilih)</h1>
-          <div className="mt-2 text-sm text-zinc-600">Tambah pemilih menggunakan RPC untuk hashing token.</div>
+          <div className="mt-2 text-sm text-zinc-600">Tambah pemilih hashing token otomatis.</div>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
           <button
