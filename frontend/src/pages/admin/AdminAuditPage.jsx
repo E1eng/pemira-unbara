@@ -66,6 +66,7 @@ export default function AdminAuditPage() {
         id: l.id,
         time: l.created_at ? format(new Date(l.created_at), 'dd MMM HH:mm') : '-',
         action: l.action,
+        data: details, // Pass full details object for custom rendering
         reason: details.reason,
         ip: details.ip,
         userAgent: details.userAgent,
@@ -91,7 +92,6 @@ export default function AdminAuditPage() {
       />
 
       <div>
-        <div className="text-sm text-zinc-500">Keamanan PEMIRA</div>
         <h1 className="mt-1 text-xl font-bold tracking-tight text-gov-blue sm:text-2xl">Audit Log</h1>
         <div className="mt-2 text-sm text-zinc-600">Catatan aktivitas penting untuk transparansi dan keamanan pemilihan.</div>
       </div>
@@ -128,11 +128,30 @@ export default function AdminAuditPage() {
                       {r.nim ? <div className="text-xs text-zinc-500">NIM/NPM: {r.nim}</div> : null}
                     </td>
                     <td className="px-4 py-3">
-                      <div className="text-xs text-zinc-700">
-                        {r.reason ? <div>Reason: {r.reason}</div> : null}
-                        {r.ip ? <div>IP: {r.ip}</div> : null}
-                        {r.userAgent ? <div className="truncate max-w-xs">UA: {r.userAgent}</div> : null}
-                        {!r.reason && !r.ip && !r.userAgent ? <div className="text-zinc-500">(no details)</div> : null}
+                      <div className="text-xs text-zinc-700 space-y-0.5">
+                        {/* Security Logs */}
+                        {r.data.reason ? <div>Reason: <span className="font-medium">{r.data.reason}</span></div> : null}
+                        {r.data.ip ? <div className="font-mono text-xs text-zinc-500">IP: {r.data.ip}</div> : null}
+                        {r.data.userAgent ? <div className="truncate max-w-xs text-zinc-400" title={r.data.userAgent}>UA: {r.data.userAgent}</div> : null}
+
+                        {/* Admin Action Logs */}
+                        {r.data.table ? (
+                          <div className="flex items-center gap-2">
+                            <span className="bg-zinc-100 px-1.5 py-0.5 rounded border text-[10px] font-bold uppercase tracking-wider">{r.data.table}</span>
+                            <span className={`font-bold ${r.data.op === 'DELETE' ? 'text-red-600' : 'text-indigo-600'}`}>{r.data.op}</span>
+                          </div>
+                        ) : null}
+
+                        {r.data.name ? <div>Name: <span className="font-medium">{r.data.name}</span></div> : null}
+                        {r.data.id ? <div className="font-mono text-[10px] text-zinc-400">ID: {r.data.id}</div> : null}
+                        {r.data.voting_open !== undefined ? (
+                          <div>Status Voting: {r.data.voting_open ? <span className="text-emerald-600 font-bold">OPEN</span> : <span className="text-red-600 font-bold">CLOSED</span>}</div>
+                        ) : null}
+                        {r.data.live_result !== undefined ? (
+                          <div>Live Result: {r.data.live_result ? <span className="text-emerald-600 font-bold">SHOWN</span> : <span className="text-zinc-500 font-bold">HIDDEN</span>}</div>
+                        ) : null}
+
+                        {!r.data.reason && !r.data.ip && !r.data.table && !r.data.type ? <div className="text-zinc-400 italic">(no details)</div> : null}
                       </div>
                     </td>
                   </tr>

@@ -7,25 +7,42 @@ import { supabase } from '../../lib/supabaseClient.js'
 import { friendlyError } from '../../lib/friendlyError.js'
 
 function StatCard({ icon: Icon, label, value, sub, tone = 'default' }) {
-  const iconStyle =
-    tone === 'success'
-      ? 'bg-emerald-50 text-emerald-700'
-      : tone === 'danger'
-        ? 'bg-red-50 text-red-700'
-        : 'bg-gov-accent/10 text-gov-accent'
+  const styles = {
+    default: {
+      bg: 'bg-white/60 backdrop-blur-xl border-white/40',
+      iconBg: 'bg-indigo-50 text-indigo-600',
+      val: 'text-zinc-900'
+    },
+    success: {
+      bg: 'bg-emerald-50/50 backdrop-blur-xl border-emerald-100/50',
+      iconBg: 'bg-emerald-100 text-emerald-600',
+      val: 'text-emerald-900'
+    },
+    danger: {
+      bg: 'bg-rose-50/50 backdrop-blur-xl border-rose-100/50',
+      iconBg: 'bg-rose-100 text-rose-600',
+      val: 'text-rose-900'
+    }
+  }
+
+  const currentStyle = styles[tone] || styles.default
 
   return (
-    <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
+    <div className={`rounded-2xl border p-5 shadow-sm hover:shadow-md transition-all duration-300 ${currentStyle.bg}`}>
+      <div className="flex items-start justify-between gap-4">
         <div>
-          <div className="text-xs font-medium text-zinc-500">{label}</div>
-          <div className="mt-1 text-2xl font-bold tracking-tight text-gov-blue">{value}</div>
+          <div className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1">{label}</div>
+          <div className={`text-3xl font-bold tracking-tight ${currentStyle.val}`}>{value}</div>
         </div>
-        <div className={["flex h-10 w-10 items-center justify-center rounded-2xl", iconStyle].join(' ')}>
-          <Icon className="h-5 w-5" />
+        <div className={`flex h-12 w-12 items-center justify-center rounded-2xl shadow-sm ${currentStyle.iconBg}`}>
+          <Icon className="h-6 w-6" />
         </div>
       </div>
-      {sub ? <div className="mt-1 text-xs text-zinc-500">{sub}</div> : null}
+      {sub && (
+        <div className="mt-3 flex items-center gap-2 text-xs font-medium text-zinc-500 bg-white/30 px-2 py-1 rounded-lg w-fit">
+          {sub}
+        </div>
+      )}
     </div>
   )
 }

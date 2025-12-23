@@ -2,7 +2,7 @@
 -- PEMIRA BEM - COMPLETE DATABASE SCHEMA
 -- =============================================
 -- Author: Antigravity Agent
--- Version: 2.0 (BEM Election)
+-- Version: 2.1 (BEM Election + Perfect Audit)
 -- 
 -- INSTRUKSI:
 -- 1. Copy SEMUA isi file ini
@@ -416,6 +416,102 @@ GRANT EXECUTE ON FUNCTION get_participation_stats() TO authenticated;
 
 REVOKE ALL ON FUNCTION validate_voter(text, text) FROM public;
 GRANT EXECUTE ON FUNCTION validate_voter(text, text) TO anon, authenticated;
+
+-- =============================================
+-- 18. TRIGGERS - AUTOMTIC AUDIT LOGGING (The Fix)
+-- =============================================
+
+CREATE OR REPLACE FUNCTION log_admin_action_trigger()
+RETURNS TRIGGER AS $$
+DECLARE
+  v_admin_id uuid;
+  v_details jsonb;
+  v_action text;
+BEGIN
+  -- Attempt to get current user ID
+  v_admin_id := auth.uid();
+  v_action := TG_OP; -- INSERT, UPDATE, DELETE
+
+  -- Build details JSON based on table and operation
+  IF TG_TABLE_NAME = 'candidates' THEN
+    IF v_action = 'DELETE' THEN
+      v_details := jsonb_build_object('table', 'candidates', 'op', 'DELETE', 'id', OLD.id, 'name', OLD.chairman_name);
+    ELSE
+      v_details := jsonb_build_object('table', 'candidates', 'op', v_action, 'id', NEW.id, 'name', NEW.chairman_name);
+    END IF;
+
+  ELSIF TG_TABLE_NAME = 'voters' THEN
+    IF v_action = 'DELETE' THEN
+      v_details := jsonb_build_object('table', 'voters', 'op', 'DELETE', 'nim', OLD.nim);
+    ELSIF v_action = 'UPDATE' AND OLD.has_voted IS DISTINCT FROM NEW.has_voted THEN
+      -- Special case: Resetting vote status
+      v_details := jsonb_build_object('table', 'voters', 'op', 'RESET_STATUS', 'nim', NEW.nim, 'new_status', NEW.has_voted);
+    ELSE
+      v_details := jsonb_build_object('table', 'voters', 'op', v_action, 'nim', NEW.nim);
+    END IF;
+
+  ELSIF TG_TABLE_NAME = 'election_settings' THEN
+    v_details := jsonb_build_object(
+      'table', 'election_settings', 
+      'op', 'UPDATE', 
+      'voting_open', NEW.is_voting_open, 
+      'live_result', NEW.show_live_result
+    );
+
+  ELSIF TG_TABLE_NAME = 'admin_users' THEN
+     IF v_action = 'DELETE' THEN
+        v_details := jsonb_build_object('table', 'admin_users', 'op', 'DELETE', 'user_id', OLD.user_id);
+     ELSE
+        v_details := jsonb_build_object('table', 'admin_users', 'op', v_action, 'user_id', NEW.user_id);
+     END IF;
+  END IF;
+
+  -- Insert into audit_logs (Only insert if detected as admin action or significant change)
+  -- To prevent endless loops or noise, we only log if it's NOT a system vote (VOTE_SUCCESS logs separately)
+  
+  -- However, since 'voters' UPDATE is captured here, and submit_vote does UPDATE voters...
+  -- We need to differentiate.
+  -- submit_vote uses SECURITY DEFINER, so auth.uid() might be anon or user.
+  -- But we only want to log ADMIN actions here.
+  
+  -- Basic Check: Only log if auth.uid() is in admin_users?
+  -- OR, let's keep it simple: Log everything for accountability. System logs are fine.
+  
+  INSERT INTO audit_logs (action, details, created_at)
+  VALUES ('ADMIN_ACTION', v_details, now());
+
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Drop existing triggers to avoid duplicates
+DROP TRIGGER IF EXISTS audit_candidates_trigger ON candidates;
+DROP TRIGGER IF EXISTS audit_settings_trigger ON election_settings;
+DROP TRIGGER IF EXISTS audit_admin_users_trigger ON admin_users;
+DROP TRIGGER IF EXISTS audit_voters_delete_trigger ON voters;
+
+-- Attach Triggers
+
+-- Candidates: Log Everything (Insert, Update, Delete)
+CREATE TRIGGER audit_candidates_trigger
+AFTER INSERT OR UPDATE OR DELETE ON candidates
+FOR EACH ROW EXECUTE FUNCTION log_admin_action_trigger();
+
+-- Election Settings: Log Updates
+CREATE TRIGGER audit_settings_trigger
+AFTER UPDATE ON election_settings
+FOR EACH ROW EXECUTE FUNCTION log_admin_action_trigger();
+
+-- Sidebar Admin Users: Log Everything
+CREATE TRIGGER audit_admin_users_trigger
+AFTER INSERT OR UPDATE OR DELETE ON admin_users
+FOR EACH ROW EXECUTE FUNCTION log_admin_action_trigger();
+
+-- Voters: Only Log DELETE (Insert is handled by RPC, Update usually handled by system vote)
+-- We only log DELETE to catch mass deletion or individual removal by admin.
+CREATE TRIGGER audit_voters_delete_trigger
+AFTER DELETE ON voters
+FOR EACH ROW EXECUTE FUNCTION log_admin_action_trigger();
 
 -- =============================================
 -- DONE!
