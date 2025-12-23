@@ -245,7 +245,7 @@ export default function ResultsPage() {
 
   return (
     <Layout>
-      <div className="w-full max-w-md mx-auto pb-24 pt-2 px-4 space-y-6">
+      <div className="w-full max-w-md mx-auto pb-24 pt-2 space-y-6">
         <Toast open={toast.open} variant="error" message={toast.message} onClose={() => setToast({ open: false, message: '' })} />
 
         {/* Compact Header */}
