@@ -164,21 +164,21 @@ export default function ResultsPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex w-full sm:w-auto items-center gap-3">
             {/* Total DPT Card */}
-            <div className="flex items-center gap-3 bg-zinc-50 px-3 py-2 rounded-xl border border-zinc-200">
-              <div className="text-right">
+            <div className="flex-1 sm:flex-initial flex items-center justify-between sm:justify-start gap-3 px-4 py-3 rounded-xl border border-zinc-100 bg-white/50">
+              <div className="text-right sm:text-left">
                 <p className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">Total DPT</p>
                 <p className="text-lg font-bold text-zinc-900 leading-none">{totalDpt.toLocaleString()}</p>
               </div>
             </div>
 
             {/* Total Votes Card */}
-            <div className="flex items-center gap-3 bg-indigo-50 px-3 py-2 rounded-xl border border-indigo-100">
-              <div className="bg-white p-1.5 rounded-lg shadow-sm text-indigo-600">
+            <div className="flex-1 sm:flex-initial flex items-center justify-between sm:justify-start gap-3 px-4 py-3 rounded-xl border border-indigo-100 bg-indigo-50/30">
+              <div className="order-last sm:order-first bg-indigo-100 p-1.5 rounded-lg text-indigo-600">
                 <Users className="h-4 w-4" />
               </div>
-              <div className="text-right">
+              <div className="text-left sm:text-right">
                 <p className="text-[10px] uppercase font-bold text-indigo-400 tracking-wider">Suara Masuk</p>
                 <p className="text-lg font-bold text-indigo-900 leading-none">{totalVotes.toLocaleString()}</p>
               </div>
@@ -188,7 +188,7 @@ export default function ResultsPage() {
 
         {/* Leader Card */}
         {leader && (
-          <div className="flex justify-center w-full px-4 sm:px-0">
+          <div className="flex justify-center w-full">
             <MovingBorderButton
               borderRadius="1.5rem"
               as="div"
@@ -231,7 +231,7 @@ export default function ResultsPage() {
         )}
 
         {/* Results List */}
-        <div className={`space-y-4 transition-all duration-500 max-w-3xl mx-auto px-4 ${refreshing ? 'opacity-50 grayscale' : 'opacity-100'}`}>
+        <div className={`space-y-4 transition-all duration-500 max-w-3xl mx-auto ${refreshing ? 'opacity-50 grayscale' : 'opacity-100'}`}>
           {loading ? (
             <>
               <RowSkeleton />
