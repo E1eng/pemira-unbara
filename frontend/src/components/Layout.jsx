@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { Landmark, Home, BarChart2, ChevronRight } from 'lucide-react'
+import { Landmark, Home, BarChart2, ChevronRight, CheckSquare } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useEffect } from 'react'
 import nprogress from 'nprogress'
@@ -70,7 +70,7 @@ export default function Layout({ children }) {
 
       {/* Mobile Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-zinc-200 bg-white/90 backdrop-blur-lg supports-[backdrop-filter]:bg-white/80 pb-safe sm:hidden">
-        <div className="grid grid-cols-2 gap-1 px-4 py-2">
+        <div className="grid grid-cols-3 gap-1 px-4 py-2">
           <Link
             to="/"
             className={`flex flex-col items-center justify-center rounded-xl py-2.5 transition-all active:scale-95 ${path === '/' ? 'text-gov-accent' : 'text-zinc-400 hover:text-zinc-600'
@@ -78,6 +78,14 @@ export default function Layout({ children }) {
           >
             <Home className={`h-6 w-6 mb-1 transition-transform ${path === '/' ? 'scale-110' : ''}`} strokeWidth={path === '/' ? 2.5 : 2} />
             <span className="text-[10px] font-medium">Beranda</span>
+          </Link>
+          <Link
+            to="/vote"
+            className={`flex flex-col items-center justify-center rounded-xl py-2.5 transition-all active:scale-95 ${path === '/vote' ? 'text-gov-accent' : 'text-zinc-400 hover:text-zinc-600'
+              }`}
+          >
+            <CheckSquare className={`h-6 w-6 mb-1 transition-transform ${path === '/vote' ? 'scale-110' : ''}`} strokeWidth={path === '/vote' ? 2.5 : 2} />
+            <span className="text-[10px] font-medium">Bilik Suara</span>
           </Link>
           <Link
             to="/results"
