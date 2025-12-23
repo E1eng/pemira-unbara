@@ -104,8 +104,8 @@ Berikut adalah daftar kerentanan yang harus diuji secara spesifik pada aplikasi 
 **Tujuan**: Memastikan serangan tercatat.
 
 *   **Test Case 9.1: Audit Log Trigger**
-    *   **Langkah**: Lakukan gagal login 3x, lalu login Admin buka Audit Log.
-    *   **Ekspektasi**: Tercatat 3 baris `LOGIN_FAIL` beserta IP Address.
+    *   **Langkah**: Lakukan gagal login 10x, lalu login Admin buka Audit Log.
+    *   **Ekspektasi**: Tercatat 3 baris `SECURITY_ALERT` beserta IP Address.
     *   **Hasil**: [PASS/FAIL]
     
 *   **Test Case 9.2: Admin Action Log**

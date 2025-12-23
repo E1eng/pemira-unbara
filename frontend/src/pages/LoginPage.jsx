@@ -28,10 +28,24 @@ export default function LoginPage() {
     setIsSubmitting(true)
 
     try {
+      // Fetch client info for security/audit
+      let ip = 'unknown'
+      try {
+        const res = await fetch('https://api.ipify.org?format=json')
+        const json = await res.json()
+        ip = json.ip
+      } catch (e) {
+        console.error('Failed to resolve IP', e)
+      }
+
       // Server-side validate via RPC (no side-effects)
       const { data, error } = await supabase.rpc('validate_voter', {
         p_nim: String(nim).trim(),
         p_access_code_plain: String(accessCode).trim(),
+        p_client_info: {
+          ip,
+          userAgent: navigator.userAgent
+        }
       })
 
       if (error) {

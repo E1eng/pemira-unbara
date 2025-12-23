@@ -35,6 +35,15 @@ EXCEPTION
   WHEN duplicate_object THEN NULL;
 END $$;
 
+-- Fix for existing databases: Add 'SECURITY_ALERT' if missing
+DO $$
+BEGIN
+  ALTER TYPE log_type ADD VALUE IF NOT EXISTS 'SECURITY_ALERT';
+EXCEPTION
+  WHEN duplicate_object THEN NULL; -- Ignore if already exists (postgres < 12 fallback)
+  WHEN OTHERS THEN NULL; -- Ignore other errors (e.g. if type is used)
+END $$;
+
 -- =============================================
 -- 3. TABEL - CANDIDATES (Paslon)
 -- =============================================
@@ -96,6 +105,7 @@ WHERE faculty IS NULL;
 -- =============================================
 -- 5. TABEL - RATE LIMITS (Anti Brute Force)
 -- =============================================
+DROP TABLE IF EXISTS vote_rate_limits CASCADE;
 CREATE TABLE IF NOT EXISTS vote_rate_limits (
   client_key text PRIMARY KEY,
   fail_count int DEFAULT 0 NOT NULL,
@@ -105,6 +115,10 @@ CREATE TABLE IF NOT EXISTS vote_rate_limits (
 );
 
 CREATE INDEX IF NOT EXISTS vote_rate_limits_blocked_until_idx ON vote_rate_limits (blocked_until);
+
+-- Policy for vote_rate_limits (Since validate_voter is SECURITY DEFINER, this is nice-to-have but good practice)
+ALTER TABLE vote_rate_limits ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow system to manage rate limits" ON vote_rate_limits FOR ALL USING (true) WITH CHECK (true);
 
 -- =============================================
 -- 6. TABEL - VOTES (Suara Anonim)
@@ -223,7 +237,7 @@ DECLARE
   v_ua text;
   v_now timestamptz := timezone('utc'::text, now());
   v_window interval := interval '10 minutes';
-  v_max_fail int := 5;
+  v_max_fail int := 10;
 BEGIN
   -- Cek voting open
   SELECT * INTO v_settings FROM election_settings WHERE id = 1;
@@ -376,20 +390,64 @@ $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 -- =============================================
 CREATE OR REPLACE FUNCTION validate_voter(
   p_nim text,
-  p_access_code_plain text
+  p_access_code_plain text,
+  p_client_info jsonb DEFAULT '{}'::jsonb
 ) RETURNS jsonb AS $$
 DECLARE
   v_voter voters%ROWTYPE;
+  v_rate vote_rate_limits%ROWTYPE;
+  v_client_key text;
+  v_ip text;
+  v_ua text;
+  v_now timestamptz := timezone('utc'::text, now());
+  v_window interval := interval '10 minutes';
+  v_max_fail int := 10;
 BEGIN
-  SELECT * INTO v_voter FROM voters WHERE nim = p_nim;
-  IF NOT FOUND THEN
-    RETURN jsonb_build_object('ok', false, 'reason', 'NIM tidak ditemukan.');
+  -- Client fingerprint
+  v_ip := COALESCE(p_client_info->>'ip', 'unknown');
+  v_ua := COALESCE(p_client_info->>'userAgent', 'unknown');
+  v_client_key := encode(digest(v_ip || '|' || v_ua, 'sha256'), 'hex');
+
+  -- 1. Check if ALREADY blocked
+  SELECT * INTO v_rate FROM vote_rate_limits WHERE client_key = v_client_key;
+  IF FOUND AND v_rate.blocked_until > v_now THEN
+    INSERT INTO audit_logs (action, details) VALUES ('SECURITY_ALERT', jsonb_build_object('reason', 'Rate Limited (Login)', 'key', v_client_key, 'ip', v_ip));
+    RETURN jsonb_build_object('ok', false, 'reason', 'Terlalu banyak percobaan. Tunggu 10 menit.');
   END IF;
 
-  IF v_voter.access_code_hash != crypt(p_access_code_plain, v_voter.access_code_hash) THEN
-    RETURN jsonb_build_object('ok', false, 'reason', 'Kode Akses salah.');
+  -- 2. Validate NIM
+  SELECT * INTO v_voter FROM voters WHERE nim = p_nim;
+  
+  -- If NIM not found OR Token mismatch -> Increment Fail Count & Block if needed
+  IF NOT FOUND OR v_voter.access_code_hash != crypt(p_access_code_plain, v_voter.access_code_hash) THEN
+    
+    INSERT INTO vote_rate_limits (client_key, fail_count, first_fail_at, updated_at, blocked_until)
+    VALUES (v_client_key, 1, v_now, v_now, NULL)
+    ON CONFLICT (client_key) DO UPDATE
+    SET 
+      fail_count = vote_rate_limits.fail_count + 1,
+      updated_at = EXCLUDED.updated_at,
+      blocked_until = CASE 
+        -- Block immediately if threshold reached
+        WHEN (vote_rate_limits.fail_count + 1) >= v_max_fail THEN EXCLUDED.updated_at + v_window
+        ELSE vote_rate_limits.blocked_until -- Keep existing or NULL
+      END
+    RETURNING * INTO v_rate;
+
+    -- Log specific error
+    IF NOT FOUND THEN
+      INSERT INTO audit_logs (action, details) VALUES ('LOGIN_FAIL', jsonb_build_object('reason', 'NIM Not Found', 'nim', p_nim, 'ip', v_ip));
+      RETURN jsonb_build_object('ok', false, 'reason', 'NIM tidak ditemukan.');
+    ELSE
+      INSERT INTO audit_logs (action, details) VALUES ('LOGIN_FAIL', jsonb_build_object('reason', 'Wrong Token', 'nim', p_nim, 'ip', v_ip));
+      RETURN jsonb_build_object('ok', false, 'reason', 'Kode Akses salah.');
+    END IF;
+
   END IF;
   
+  -- 3. Success: Reset rate limit for this client
+  DELETE FROM vote_rate_limits WHERE client_key = v_client_key;
+
   RETURN jsonb_build_object(
     'ok', true, 
     'has_voted', v_voter.has_voted, 
@@ -414,8 +472,8 @@ GRANT EXECUTE ON FUNCTION get_vote_recap() TO anon, authenticated;
 REVOKE ALL ON FUNCTION get_participation_stats() FROM public;
 GRANT EXECUTE ON FUNCTION get_participation_stats() TO authenticated;
 
-REVOKE ALL ON FUNCTION validate_voter(text, text) FROM public;
-GRANT EXECUTE ON FUNCTION validate_voter(text, text) TO anon, authenticated;
+REVOKE ALL ON FUNCTION validate_voter(text, text, jsonb) FROM public;
+GRANT EXECUTE ON FUNCTION validate_voter(text, text, jsonb) TO anon, authenticated;
 
 -- =============================================
 -- 18. TRIGGERS - AUTOMTIC AUDIT LOGGING (The Fix)
