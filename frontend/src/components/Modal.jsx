@@ -4,7 +4,7 @@ export default function Modal({ open, title, children, footer, onClose }) {
   return (
     <AnimatePresence>
       {open && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center">
+        <div className="fixed inset-0 z-[100] flex items-end justify-center p-4 sm:items-center">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -24,7 +24,7 @@ export default function Modal({ open, title, children, footer, onClose }) {
               <div className="text-base font-bold text-gov-blue">{title}</div>
             </div>
 
-            <div className="px-5 py-5 sm:px-6">{children}</div>
+            <div className="px-5 py-5 sm:px-6 max-h-[80vh] overflow-y-auto">{children}</div>
 
             {footer ? (
               <div className="flex flex-col gap-2 border-t border-zinc-100 bg-zinc-50/50 px-5 py-4 sm:flex-row sm:justify-end sm:px-6">

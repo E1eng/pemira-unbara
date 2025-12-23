@@ -33,13 +33,13 @@ export default function Layout({ children }) {
     <div className="min-h-screen bg-gov-bg selection:bg-indigo-100 selection:text-indigo-900 flex flex-col font-sans antialiased">
       {/* Mobile App Header */}
       <header className="sticky top-0 z-50 border-b border-zinc-200/80 bg-white/80 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60">
-        <div className="mx-auto max-w-5xl px-4 py-3 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-10">
-            <Link to="/" className="flex items-center gap-2.5 group">
-              <img src={logo} alt="Logo BEM" className="h-8 w-auto object-contain transition-transform group-hover:scale-105" />
+        <div className="mx-auto max-w-5xl px-4 py-2 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between">
+            <Link to="/" className="flex items-center gap-3 group">
+              <img src={logo} alt="Logo BEM" className="h-10 w-auto object-contain transition-transform group-hover:scale-105" />
               <div>
-                <div className="text-sm font-bold leading-none text-gov-blue tracking-tight group-hover:text-gov-accent transition-colors">E-Voting BEM</div>
-                <div className="text-[10px] font-medium text-zinc-400 leading-none mt-0.5">Sistem Pemilihan</div>
+                <div className="text-base font-bold leading-none text-gov-blue tracking-tight group-hover:text-gov-accent transition-colors">E-Voting BEM</div>
+                <div className="text-[10px] font-medium text-zinc-400 leading-none mt-1">Sistem Pemilihan</div>
               </div>
             </Link>
 

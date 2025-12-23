@@ -77,7 +77,7 @@ export default function VotePage() {
 
     const fetchCandidates = async () => {
       if (isInitialLoad) setLoading(true)
-      const { data, error } = await supabase.from('candidates').select('*').order('id', { ascending: true })
+      const { data, error } = await supabase.from('candidates').select('*').order('candidate_number', { ascending: true })
       if (cancelled) return
       if (error) {
         setCandidates((prev) => (isInitialLoad ? [] : prev))
@@ -127,7 +127,7 @@ export default function VotePage() {
       const taglineRaw = c.vision || c.mission || ''
       const tagline = taglineRaw ? String(taglineRaw).replace(/\s+/g, ' ').trim() : ''
       const showPhoto = Boolean(c.photo_url) && !brokenPhotoIds.has(c.id)
-      const displayNo = idx + 1
+      const displayNo = c.candidate_number
 
       return (
         <div key={c.id} className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition-all hover:shadow-md hover:border-gov-accent/50">
@@ -274,8 +274,8 @@ export default function VotePage() {
               candidates.map((c, idx) => {
                 const taglineRaw = c.vision || c.mission || ''
                 const tagline = taglineRaw ? String(taglineRaw).replace(/\s+/g, ' ').trim() : ''
+                const displayNo = c.candidate_number
                 const showPhoto = Boolean(c.photo_url) && !brokenPhotoIds.has(c.id)
-                const displayNo = idx + 1
 
                 return (
                   <motion.div
@@ -286,12 +286,12 @@ export default function VotePage() {
                     className="group relative flex flex-col bg-white rounded-[2rem] border border-zinc-200 shadow-sm transition-all duration-300 hover:border-indigo-300 hover:shadow-xl hover:shadow-indigo-500/10 hover:-translate-y-1 overflow-hidden h-full"
                   >
                     {/* Photo Area */}
-                    <div className="relative aspect-[4/3] w-full overflow-hidden bg-zinc-100 p-2">
+                    <div className="relative aspect-square sm:aspect-[4/5] w-full overflow-hidden bg-zinc-100">
                       {showPhoto ? (
                         <img
                           src={c.photo_url}
                           alt="Kandidat"
-                          className="h-full w-full object-contain transition-transform duration-700 group-hover:scale-105"
+                          className="h-full w-full object-cover object-top transition-transform duration-700 group-hover:scale-105"
                           loading="lazy"
                           onError={() => setBrokenPhotoIds(prev => new Set(prev).add(c.id))}
                         />
@@ -321,8 +321,8 @@ export default function VotePage() {
                       </div>
 
                       <div className="py-3 px-4 rounded-xl bg-zinc-50 border border-zinc-100 mb-6 flex-1">
-                        <p className="text-xs text-zinc-500 line-clamp-3 italic leading-relaxed">
-                          "{tagline || 'Menuju perubahan yang lebih baik.'}"
+                        <p className="text-xs text-zinc-600 line-clamp-3 leading-relaxed font-medium">
+                          {tagline || 'Menuju perubahan yang lebih baik.'}
                         </p>
                       </div>
 
@@ -379,16 +379,48 @@ export default function VotePage() {
         }
       >
         <div className="space-y-4">
-          <div className="rounded-xl overflow-hidden bg-zinc-100 aspect-video relative">
-            <img src={detailCandidate?.photo_url} className="w-full h-full object-cover" onError={(e) => e.target.style.display = 'none'} />
+          <div className="rounded-xl overflow-hidden bg-zinc-50 border border-zinc-100 flex items-center justify-center h-64 sm:h-80 relative">
+            {detailCandidate?.photo_url ? (
+              <img src={detailCandidate.photo_url} className="h-full w-full object-contain" alt="Kandidat" onError={(e) => e.target.style.display = 'none'} />
+            ) : (
+              <User className="w-20 h-20 text-zinc-300" />
+            )}
           </div>
-          <div>
-            <h3 className="text-xl font-bold text-gov-blue">{detailCandidate?.chairman_name} & {detailCandidate?.vice_chairman_name}</h3>
-            <p className="text-sm text-zinc-500">No. Urut {detailCandidate?.candidate_number}</p>
+          <div className="text-center">
+            <div className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-gov-blue text-white font-bold text-sm mb-3 shadow-md border-2 border-white ring-2 ring-zinc-100">
+              {detailCandidate?.displayNo || detailCandidate?.candidate_number}
+            </div>
+            <div className="grid grid-cols-2 gap-4 text-center">
+              <div className="flex flex-col items-center">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Calon Ketua</span>
+                <h3 className="text-base font-bold text-zinc-900 leading-tight">
+                  {detailCandidate?.chairman_name}
+                </h3>
+              </div>
+              <div className="flex flex-col items-center relative">
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 -ml-2 w-px h-8 bg-zinc-200 hidden sm:block"></div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Calon Wakil</span>
+                <h3 className="text-base font-bold text-zinc-900 leading-tight">
+                  {detailCandidate?.vice_chairman_name}
+                </h3>
+              </div>
+            </div>
           </div>
-          <div className="bg-zinc-50 p-4 rounded-xl text-sm space-y-2">
-            <p><strong>Visi:</strong> {detailCandidate?.vision || '-'}</p>
-            <p><strong>Misi:</strong> {detailCandidate?.mission || '-'}</p>
+          <div className="bg-zinc-50 p-5 rounded-xl text-sm space-y-4 border border-zinc-100">
+            <div>
+              <strong className="block mb-1.5 text-zinc-900 font-bold">Visi</strong>
+              <p className="whitespace-pre-wrap leading-relaxed text-zinc-600 text-justify break-words">
+                {detailCandidate?.vision || '-'}
+              </p>
+            </div>
+            {detailCandidate?.mission && (
+              <div>
+                <strong className="block mb-1.5 text-zinc-900 font-bold">Misi</strong>
+                <p className="whitespace-pre-wrap leading-relaxed text-zinc-600 text-justify break-words">
+                  {detailCandidate?.mission}
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </Modal>
