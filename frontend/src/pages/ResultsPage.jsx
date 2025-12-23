@@ -4,20 +4,144 @@ import { useNavigate } from 'react-router-dom'
 import Layout from '../components/Layout.jsx'
 import Toast from '../components/Toast.jsx'
 import { supabase } from '../lib/supabaseClient.js'
-import { BarChart3, Lock, RefreshCw, Trophy, Users } from 'lucide-react'
-import { MovingBorderButton } from '../components/ui/moving-border.jsx'
+import { BarChart3, Lock, RefreshCw, Trophy, Users, Vote } from 'lucide-react'
 
-function RowSkeleton() {
+// --- Components ---
+
+function StatCard({ label, value, sublabel, icon: Icon, colorClass }) {
   return (
-    <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-      <div className="flex items-center gap-3">
-        <div className="h-4 w-24 animate-pulse rounded bg-zinc-200" />
-        <div className="h-3 flex-1 animate-pulse rounded bg-zinc-200" />
-        <div className="h-4 w-8 animate-pulse rounded bg-zinc-200" />
+    <div className="flex flex-col items-center justify-center p-4 rounded-2xl bg-white/60 border border-white/40 shadow-sm backdrop-blur-sm text-center">
+      <div className={`p-2 rounded-xl ${colorClass} bg-opacity-10 mb-2`}>
+        <Icon className={`w-5 h-5 ${colorClass.replace('bg-', 'text-')}`} />
       </div>
+      <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">{label}</span>
+      <span className="text-xl font-bold text-zinc-900 leading-tight mt-0.5">{value}</span>
+      {sublabel && <span className="text-[10px] text-zinc-400 font-medium">{sublabel}</span>}
     </div>
   )
 }
+
+function LeaderCard({ candidate, pct, totalVotes, isVotingOpen }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="relative w-full overflow-hidden rounded-[2rem] bg-white border border-indigo-100 shadow-xl shadow-indigo-500/10"
+    >
+      <div className="absolute top-0 inset-x-0 h-24 bg-gradient-to-b from-indigo-50 to-transparent pointer-events-none" />
+      <div className="absolute top-4 right-4 p-2 bg-white/80 backdrop-blur rounded-xl border border-indigo-50 shadow-sm z-10">
+        <Trophy className="w-6 h-6 text-amber-500 fill-amber-500" />
+      </div>
+
+      <div className="flex flex-col items-center pt-8 pb-6 px-6 relative z-10 text-center">
+        {/* Photo with Ring */}
+        <div className="relative mb-4">
+          <div className="w-28 h-28 rounded-3xl overflow-hidden border-4 border-white shadow-lg bg-zinc-100">
+            {candidate.photoUrl ? (
+              <img src={candidate.photoUrl} alt={candidate.chairmanName} className="w-full h-full object-cover object-top" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-zinc-300"><Users className="w-10 h-10" /></div>
+            )}
+          </div>
+          <div className="absolute -bottom-3 inset-x-0 flex justify-center">
+            <span className="bg-amber-100 text-amber-700 border border-amber-200 text-xs font-bold px-3 py-1 rounded-full shadow-sm">
+              #{candidate.candidateNumber}
+            </span>
+          </div>
+        </div>
+
+        {/* Names */}
+        <h2 className="text-2xl font-bold text-zinc-900 leading-tight">
+          {candidate.chairmanName}
+        </h2>
+        <p className="text-sm font-medium text-zinc-500 mt-1">
+          & {candidate.viceChairmanName}
+        </p>
+
+        {/* Big Percentage */}
+        <div className="mt-6 mb-2">
+          <span className="text-5xl font-black text-indigo-600 tracking-tighter">{pct}%</span>
+          <span className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mt-1">{candidate.total.toLocaleString()} Suara</span>
+        </div>
+
+        {/* Progress Bar */}
+        <div className="w-full h-3 bg-zinc-100 rounded-full overflow-hidden relative mt-2">
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${pct}%` }}
+            transition={{ duration: 1, delay: 0.2 }}
+            className="absolute inset-y-0 left-0 bg-gradient-to-r from-indigo-500 to-indigo-400 rounded-full"
+          />
+        </div>
+
+        <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-indigo-50 border border-indigo-100 text-[10px] font-bold text-indigo-700 uppercase tracking-wide">
+          {isVotingOpen ? (
+            <>
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+              </span>
+              Memimpin Sementara
+            </>
+          ) : (
+            <>
+              <Trophy className="w-3 h-3" />
+              Pemenang Voting
+            </>
+          )}
+        </div>
+      </div>
+    </motion.div>
+  )
+}
+
+function CandidateItem({ candidate, pct, index }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: -10 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: index * 0.1 }}
+      className="flex items-center gap-4 p-3 rounded-2xl bg-white border border-zinc-200 shadow-sm"
+    >
+      <div className="w-14 h-14 shrink-0 rounded-xl bg-zinc-100 overflow-hidden border border-zinc-100">
+        {candidate.photoUrl ? (
+          <img src={candidate.photoUrl} alt={candidate.chairmanName} className="w-full h-full object-cover object-top" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-zinc-300"><Users className="w-6 h-6" /></div>
+        )}
+      </div>
+
+      <div className="flex-1 min-w-0">
+        <div className="flex justify-between items-start mb-1">
+          <div>
+            <h3 className="text-sm font-bold text-zinc-900 truncate pr-2">{candidate.chairmanName}</h3>
+            <p className="text-xs text-zinc-500 truncate">{candidate.viceChairmanName}</p>
+          </div>
+          <div className="text-right shrink-0">
+            <span className="text-lg font-bold text-zinc-900">{pct}%</span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="flex-1 h-1.5 bg-zinc-100 rounded-full overflow-hidden">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${pct}%` }}
+              className="h-full bg-zinc-400 rounded-full"
+            />
+          </div>
+          <span className="text-[10px] font-mono text-zinc-400 shrink-0">{candidate.total} Suara</span>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-center w-6 h-6 rounded-full bg-zinc-100 text-xs font-bold text-zinc-500">
+        {candidate.candidateNumber}
+      </div>
+    </motion.div>
+  )
+}
+
+// --- Main Page ---
 
 export default function ResultsPage() {
   const navigate = useNavigate()
@@ -32,12 +156,10 @@ export default function ResultsPage() {
 
   const checkSettings = useCallback(async () => {
     const { data, error } = await supabase.from('election_settings').select('show_live_result, is_voting_open').eq('id', 1).single()
-
     if (error || !data) {
       setShowLiveResult(false)
       return false
     }
-
     setIsVotingOpen(data.is_voting_open)
     setShowLiveResult(data.show_live_result === true)
     return data.show_live_result === true
@@ -46,52 +168,37 @@ export default function ResultsPage() {
   const fetchRecap = useCallback(async () => {
     const allowed = await checkSettings()
     if (!allowed) {
-      setRows([])
-      setLoading(false)
-      setRefreshing(false)
+      setRows([]); setLoading(false); setRefreshing(false);
       return
     }
-
     const isInitialLoad = rowsRef.current.length === 0
-    if (isInitialLoad) {
-      setLoading(true)
-    } else {
-      setRefreshing(true)
-    }
+    if (isInitialLoad) setLoading(true)
+    else setRefreshing(true)
 
-    // Parallel fetching for performance
     const [rpc, votersRef] = await Promise.all([
       supabase.rpc('get_vote_recap'),
       supabase.from('voters').select('*', { count: 'exact', head: true })
     ])
 
-    if (votersRef.count !== null) {
-      setTotalDpt(votersRef.count)
-    }
+    if (votersRef.count !== null) setTotalDpt(votersRef.count)
 
     if (!rpc.error && Array.isArray(rpc.data)) {
-      const mapped = rpc.data
-        .map((r) => ({
-          candidateNumber: r.candidate_number,
-          chairmanName: r.chairman_name,
-          viceChairmanName: r.vice_chairman_name,
-          photoUrl: r.photo_url,
-          total: Number(r.total_votes ?? 0),
-        }))
-        .sort((a, b) => b.total - a.total)
+      const mapped = rpc.data.map((r) => ({
+        candidateNumber: r.candidate_number,
+        chairmanName: r.chairman_name,
+        viceChairmanName: r.vice_chairman_name,
+        photoUrl: r.photo_url,
+        total: Number(r.total_votes ?? 0),
+      })).sort((a, b) => b.total - a.total)
 
       rowsRef.current = mapped
       setRows(mapped)
-      setLoading(false)
-      setRefreshing(false)
-      return
+    } else {
+      setRows([])
+      setToast({ open: true, message: rpc.error?.message || 'Gagal memuat data' })
     }
-
-    rowsRef.current = []
-    setRows([])
     setLoading(false)
     setRefreshing(false)
-    setToast({ open: true, message: rpc.error?.message || 'Tidak dapat memuat hasil.' })
   }, [checkSettings])
 
   useEffect(() => {
@@ -101,24 +208,23 @@ export default function ResultsPage() {
   }, [fetchRecap])
 
   const totalVotes = useMemo(() => rows.reduce((sum, r) => sum + r.total, 0), [rows])
-  const leader = rows[0]
+  const [leader, ...runnersUp] = rows
+
+  // --- Render States ---
 
   if (showLiveResult === false) {
     return (
       <Layout>
-        <div className="flex min-h-[calc(100vh-64px)] w-full items-center justify-center p-4">
-          <div className="rounded-2xl border border-zinc-200 bg-white/80 backdrop-blur-md p-8 text-center shadow-xl max-w-md w-full">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-50 shadow-inner">
-              <Lock className="h-8 w-8 text-amber-600" />
+        <div className="flex min-h-[80vh] w-full items-center justify-center p-6">
+          <div className="flex flex-col items-center text-center max-w-sm">
+            <div className="w-20 h-20 bg-zinc-100 rounded-3xl flex items-center justify-center mb-6">
+              <Lock className="w-8 h-8 text-zinc-400" />
             </div>
-            <h1 className="mt-6 text-xl font-bold text-gov-blue">Hasil Belum Dipublikasikan</h1>
-            <p className="mt-3 text-sm text-zinc-600">
-              Hasil rekapitulasi suara belum dibuka untuk publik oleh panitia.
+            <h2 className="text-2xl font-bold text-zinc-900">Hasil Belum Tersedia</h2>
+            <p className="text-zinc-500 mt-2 mb-8 leading-relaxed">
+              Hasil pemilihan masih bersifat rahasia dan belum dibuka untuk publik.
             </p>
-            <button
-              onClick={() => navigate('/')}
-              className="mt-6 inline-flex h-11 items-center justify-center rounded-xl bg-gov-accent px-6 text-sm font-semibold text-white shadow-lg shadow-gov-accent/20 hover:bg-gov-accent/95 hover:shadow-gov-accent/30 transition-all"
-            >
+            <button onClick={() => navigate('/')} className="w-full py-3 bg-zinc-900 text-white rounded-xl font-semibold hover:bg-zinc-800 transition-colors">
               Kembali ke Beranda
             </button>
           </div>
@@ -127,14 +233,11 @@ export default function ResultsPage() {
     )
   }
 
-  if (showLiveResult === null) {
+  if (loading && rows.length === 0) {
     return (
       <Layout>
-        <div className="flex min-h-[calc(100vh-64px)] w-full items-center justify-center">
-          <div className="flex flex-col items-center gap-2">
-            <RefreshCw className="h-6 w-6 animate-spin text-zinc-400" />
-            <div className="text-sm text-zinc-500">Memuat data...</div>
-          </div>
+        <div className="flex min-h-screen items-center justify-center">
+          <RefreshCw className="w-6 h-6 animate-spin text-zinc-400" />
         </div>
       </Layout>
     )
@@ -142,198 +245,71 @@ export default function ResultsPage() {
 
   return (
     <Layout>
-      <div className="w-full space-y-8 pt-0 pb-20">
-        <Toast
-          open={toast.open}
-          variant="error"
-          title="Gagal memuat"
-          message={toast.message}
-          onClose={() => setToast({ open: false, message: '' })}
-        />
+      <div className="w-full max-w-md mx-auto pb-24 pt-2 px-4 space-y-6">
+        <Toast open={toast.open} variant="error" message={toast.message} onClose={() => setToast({ open: false, message: '' })} />
 
-        {/* Sticky Header with Glassmorphism */}
-        {/* Header Block */}
-        <div className="relative rounded-2xl px-5 py-4 bg-white/90 backdrop-blur-xl border border-zinc-200/50 flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm">
-          <div className="text-center sm:text-left">
-            <h1 className="text-2xl font-bold tracking-tight text-zinc-900">Hasil Suara BEM</h1>
-            <div className="flex items-center justify-center sm:justify-start gap-2 text-xs font-medium text-zinc-500 mt-1">
-              <span className={`h-2 w-2 rounded-full ${refreshing ? 'bg-indigo-500 animate-pulse' : 'bg-emerald-500'}`} />
-              <span>{refreshing ? 'Sinkronisasi data...' : 'Data Realtime'}</span>
-              <span className="text-zinc-300">•</span>
-              <span>Update tiap 10 detik</span>
+        {/* Compact Header */}
+        <div className="flex items-center justify-between pb-2">
+          <div>
+            <h1 className="text-xl font-bold text-zinc-900">Real Count</h1>
+            <div className="flex items-center gap-1.5 mt-1">
+              <span className={`w-1.5 h-1.5 rounded-full ${refreshing ? 'bg-indigo-500 animate-pulse' : 'bg-emerald-500'}`}></span>
+              <span className="text-xs font-medium text-zinc-500">Live Update</span>
             </div>
           </div>
-
-          <div className="flex w-full sm:w-auto items-center gap-3">
-            {/* Total DPT Card */}
-            <div className="flex-1 sm:flex-initial flex items-center justify-between sm:justify-start gap-3 px-4 py-3 rounded-xl border border-zinc-100 bg-white/50">
-              <div className="text-right sm:text-left">
-                <p className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">Total DPT</p>
-                <p className="text-lg font-bold text-zinc-900 leading-none">{totalDpt.toLocaleString()}</p>
-              </div>
-            </div>
-
-            {/* Total Votes Card */}
-            <div className="flex-1 sm:flex-initial flex items-center justify-between sm:justify-start gap-3 px-4 py-3 rounded-xl border border-indigo-100 bg-indigo-50/30">
-              <div className="order-last sm:order-first bg-indigo-100 p-1.5 rounded-lg text-indigo-600">
-                <Users className="h-4 w-4" />
-              </div>
-              <div className="text-left sm:text-right">
-                <p className="text-[10px] uppercase font-bold text-indigo-400 tracking-wider">Suara Masuk</p>
-                <p className="text-lg font-bold text-indigo-900 leading-none">{totalVotes.toLocaleString()}</p>
-              </div>
-            </div>
+          <div className="bg-white/50 backdrop-blur px-3 py-1.5 rounded-lg border border-white/40 shadow-sm">
+            <span className="text-xs font-bold text-indigo-600">{totalVotes.toLocaleString()}</span>
+            <span className="text-[10px] text-zinc-400 ml-1 font-medium">Suara Masuk</span>
           </div>
         </div>
 
-        {/* Leader Card */}
-        {leader && (
-          <div className="flex justify-center w-full">
-            <MovingBorderButton
-              borderRadius="1.5rem"
-              as="div"
-              containerClassName="h-auto w-full max-w-2xl bg-white shadow-xl"
-              className="bg-white text-zinc-900 border-zinc-100"
-              duration={3000}
-            >
-              <div className="flex flex-col sm:flex-row w-full items-center gap-6 p-6 relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-3 opacity-10">
-                  <Trophy className="w-24 h-24 text-indigo-500 rotate-12" />
-                </div>
+        {/* Stats Grid */}
+        <div className="grid grid-cols-2 gap-3">
+          <StatCard
+            label="Total DPT"
+            value={totalDpt.toLocaleString()}
+            sublabel="Mahasiswa"
+            icon={Users}
+            colorClass="bg-emerald-500 text-emerald-600"
+          />
+          <StatCard
+            label="Partisipasi"
+            value={`${totalDpt > 0 ? Math.round((totalVotes / totalDpt) * 100) : 0}%`}
+            sublabel={`${(totalDpt - totalVotes).toLocaleString()} Belum`}
+            icon={BarChart3}
+            colorClass="bg-blue-500 text-blue-600"
+          />
+        </div>
 
-                <div className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl shadow-lg border-2 ${isVotingOpen ? 'bg-amber-50 border-amber-100 text-amber-600' : 'bg-indigo-50 border-indigo-100 text-indigo-600'}`}>
-                  <Trophy className="h-8 w-8" />
-                </div>
-
-                <div className="flex-1 min-w-0 text-center sm:text-left relative z-10">
-                  <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider mb-2 ${isVotingOpen ? 'bg-amber-100 text-amber-700' : 'bg-indigo-100 text-indigo-700'}`}>
-                    {isVotingOpen ? 'Memimpin Sementara' : 'Pemenang'}
-                    {isVotingOpen && <span className="animate-pulse">●</span>}
-                  </div>
-                  <h2 className="text-xl sm:text-2xl font-bold text-zinc-900 truncate tracking-tight">
-                    {leader.chairmanName}
-                  </h2>
-                  <p className="text-base text-zinc-500 font-medium mt-0.5">
-                    & {leader.viceChairmanName}
-                  </p>
-                  <p className="text-sm3 Suara text-zinc-400 mt-1.5 font-mono">Paslon No. {leader.candidateNumber}</p>
-                </div>
-
-                <div className="text-center sm:text-right relative z-10 bg-zinc-50 px-5 py-2.5 rounded-2xl border border-zinc-100">
-                  <div className="text-3xl font-bold text-indigo-600 tracking-tighter">
-                    {totalVotes > 0 ? Math.round((leader.total / totalVotes) * 100) : 0}%
-                  </div>
-                  <div className="text-xs text-zinc-500 font-medium">{leader.total} Suara</div>
-                </div>
-              </div>
-            </MovingBorderButton>
+        {/* Leader Spotlight */}
+        {leader ? (
+          <div className="mt-4">
+            <LeaderCard
+              candidate={leader}
+              pct={totalVotes > 0 ? Math.round((leader.total / totalVotes) * 100) : 0}
+              isVotingOpen={isVotingOpen}
+            />
           </div>
+        ) : (
+          <div className="py-20 text-center text-zinc-400">Belum ada data suara.</div>
         )}
 
-        {/* Results List */}
-        <div className={`space-y-4 transition-all duration-500 max-w-3xl mx-auto ${refreshing ? 'opacity-50 grayscale' : 'opacity-100'}`}>
-          {loading ? (
-            <>
-              <RowSkeleton />
-              <RowSkeleton />
-              <RowSkeleton />
-            </>
-          ) : rows.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center rounded-3xl border border-dashed border-zinc-300 bg-zinc-50/50">
-              <div className="bg-white p-4 rounded-full shadow-sm mb-4">
-                <BarChart3 className="h-8 w-8 text-zinc-400" />
-              </div>
-              <h3 className="text-lg font-semibold text-zinc-900">Belum ada suara masuk</h3>
-              <p className="text-sm text-zinc-500 max-w-xs mx-auto mt-1">Data akan muncul secara otomatis saat voting dimulai.</p>
+        {/* Runners Up List */}
+        {runnersUp.length > 0 && (
+          <div className="mt-8">
+            <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider block mb-3 px-1">Kandidat Lainnya</span>
+            <div className="space-y-3">
+              {runnersUp.map((r, i) => (
+                <CandidateItem
+                  key={r.candidateNumber}
+                  candidate={r}
+                  index={i}
+                  pct={totalVotes > 0 ? Math.round((r.total / totalVotes) * 100) : 0}
+                />
+              ))}
             </div>
-          ) : (
-            rows.map((r, index) => {
-              const pct = totalVotes > 0 ? Math.round((r.total / totalVotes) * 100) : 0
-              const isLeader = index === 0
-
-              return (
-                <div
-                  key={r.candidateNumber || index}
-                  className={`group relative overflow-hidden rounded-2xl border transition-all duration-300 ${isLeader ? 'bg-white border-indigo-200 shadow-lg shadow-indigo-500/10 ring-1 ring-indigo-500/20' : 'bg-white border-zinc-200 shadow-sm hover:shadow-md'}`}
-                >
-                  {/* Decorative Gradient for Leader */}
-                  {isLeader && <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-bl-full -mr-8 -mt-8 pointer-events-none" />}
-
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 relative z-10">
-                    {/* Header / Avatar Section */}
-                    {/* Header / Avatar Section */}
-                    <div className="shrink-0 relative">
-                      <div className="h-24 w-24 sm:h-28 sm:w-28 rounded-2xl bg-zinc-100 overflow-hidden shadow-inner">
-                        {r.photoUrl ? (
-                          <img
-                            src={r.photoUrl}
-                            alt={r.chairmanName}
-                            className="h-full w-full object-cover object-top"
-                            onError={(e) => {
-                              e.currentTarget.style.display = 'none';
-                              e.currentTarget.nextSibling.style.display = 'flex';
-                            }}
-                          />
-                        ) : null}
-                        <div className="hidden h-full w-full items-center justify-center bg-zinc-100 text-zinc-300" style={{ display: r.photoUrl ? 'none' : 'flex' }}>
-                          <Users className="h-8 w-8" />
-                        </div>
-                      </div>
-
-                      {/* Number Badge Inside Photo (Minimalist) */}
-                      <div className="absolute top-0 left-0 px-2.5 py-1.5 bg-white/90 backdrop-blur-sm text-xs font-bold text-zinc-800 rounded-br-2xl pointer-events-none">
-                        {r.candidateNumber || index + 1}
-                      </div>
-                    </div>
-
-                    {/* Content Section */}
-                    <div className="flex-1 min-w-0 pt-2 sm:pt-0">
-                      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-1 mb-3">
-                        <div className="min-w-0 pr-2">
-                          <h3 className={`text-lg sm:text-lg font-bold truncate tracking-tight ${isLeader ? 'text-zinc-900' : 'text-zinc-700'}`}>
-                            {r.chairmanName}
-                          </h3>
-                          <p className="text-sm text-zinc-500 font-medium truncate">
-                            & {r.viceChairmanName}
-                          </p>
-                        </div>
-
-                        <div className="flex items-center justify-between sm:block mt-2 sm:mt-0 sm:text-right">
-                          <span className="text-2xl font-bold text-zinc-900 tracking-tight">{pct}%</span>
-                          <span className="block text-[10px] sm:hidden text-zinc-400 font-medium">dari total suara</span>
-                        </div>
-                      </div>
-
-                      {/* Progress Bar */}
-                      <div className="h-3 w-full rounded-full bg-zinc-100 overflow-hidden ring-1 ring-black/5">
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${pct}%` }}
-                          transition={{ duration: 1.2, ease: "circOut" }}
-                          className={`h-full rounded-full relative ${isLeader ? 'bg-gradient-to-r from-indigo-500 to-indigo-400' : 'bg-zinc-400'}`}
-                        >
-                          <div className="absolute inset-0 w-full h-full opacity-30" style={{ backgroundImage: 'linear-gradient(45deg,rgba(255,255,255,.2) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.2) 50%,rgba(255,255,255,.2) 75%,transparent 75%,transparent)', backgroundSize: '8px 8px' }} />
-                        </motion.div>
-                      </div>
-
-                      <div className="mt-2.5 flex justify-between items-center text-xs">
-                        <div className="flex items-center gap-1.5">
-                          {isLeader && <Trophy className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />}
-                          <span className={isLeader ? 'text-indigo-600 font-medium' : 'text-zinc-400'}>
-                            {isLeader ? 'Suara Terbanyak' : 'Perolehan Suara'}
-                          </span>
-                        </div>
-                        <div className="font-mono font-bold text-zinc-600 bg-zinc-100 px-2 py-0.5 rounded text-[10px]">
-                          {r.total.toLocaleString()} Suara
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )
-            })
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </Layout>
   )
