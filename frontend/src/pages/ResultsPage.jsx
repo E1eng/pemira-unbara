@@ -259,30 +259,30 @@ export default function ResultsPage() {
                   {/* Decorative Gradient for Leader */}
                   {isLeader && <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-bl-full -mr-8 -mt-8 pointer-events-none" />}
 
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-4 p-5 relative z-10">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 relative z-10">
                     {/* Header / Avatar Section */}
-                    <div className="flex items-center gap-4">
-                      {/* Rank/Number Badge */}
-                      <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-lg font-bold shadow-sm border ${isLeader ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-zinc-100 text-zinc-500 border-zinc-200'}`}>
-                        {r.candidateNumber || index + 1}
-                      </div>
-
-                      {/* Candidate Avatar */}
-                      <div className="h-14 w-14 sm:h-16 sm:w-16 shrink-0 rounded-full bg-zinc-100 overflow-hidden border-2 border-white shadow-sm ring-1 ring-zinc-100">
+                    {/* Header / Avatar Section */}
+                    <div className="shrink-0 relative">
+                      <div className="h-24 w-24 sm:h-28 sm:w-28 rounded-2xl bg-zinc-100 overflow-hidden shadow-inner">
                         {r.photoUrl ? (
                           <img
                             src={r.photoUrl}
                             alt={r.chairmanName}
                             className="h-full w-full object-cover object-top"
                             onError={(e) => {
-                              e.currentTarget.style.display = 'none'; // Hide if broken
-                              e.currentTarget.nextSibling.style.display = 'flex'; // Show fallback
+                              e.currentTarget.style.display = 'none';
+                              e.currentTarget.nextSibling.style.display = 'flex';
                             }}
                           />
                         ) : null}
                         <div className="hidden h-full w-full items-center justify-center bg-zinc-100 text-zinc-300" style={{ display: r.photoUrl ? 'none' : 'flex' }}>
-                          <Users className="h-6 w-6" />
+                          <Users className="h-8 w-8" />
                         </div>
+                      </div>
+
+                      {/* Number Badge Inside Photo (Minimalist) */}
+                      <div className="absolute top-0 left-0 px-2.5 py-1.5 bg-white/90 backdrop-blur-sm text-xs font-bold text-zinc-800 rounded-br-2xl pointer-events-none">
+                        {r.candidateNumber || index + 1}
                       </div>
                     </div>
 

@@ -8,7 +8,7 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { supabase } from '../lib/supabaseClient.js'
 import { friendlyError } from '../lib/friendlyError.js'
 import { ArrowLeft, RefreshCw, LogOut, User, CheckCircle, AlertCircle, X, Eye } from 'lucide-react'
-import { GridBackground } from '../components/ui/grid-background.jsx'
+import { AuroraBackground } from '../components/ui/aurora-background.jsx'
 
 
 function CandidateSkeleton() {
@@ -224,7 +224,7 @@ export default function VotePage() {
 
   return (
     <Layout>
-      <GridBackground className="w-full h-full pb-20" containerClassName="min-h-screen items-start h-auto bg-zinc-50/50">
+      <AuroraBackground className="min-h-screen h-auto items-start pb-20 bg-white">
         <div className="w-full relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
           <Toast
             open={toast.open}
@@ -358,7 +358,7 @@ export default function VotePage() {
             </div>
           )}
         </div>
-      </GridBackground>
+      </AuroraBackground>
 
       {/* Modals reused with minimal changes or cleaner styling */}
       <Modal
