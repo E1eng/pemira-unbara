@@ -8,7 +8,7 @@ import confetti from 'canvas-confetti'
 export default function ThankYouPage() {
   const navigate = useNavigate()
   const { logout } = useAuth()
-  const [countdown, setCountdown] = useState(5)
+  const [countdown, setCountdown] = useState(10)
 
   useEffect(() => {
     // Trigger confetti
