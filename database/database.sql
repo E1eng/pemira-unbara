@@ -253,7 +253,7 @@ BEGIN
     ON CONFLICT (client_key) DO UPDATE
     SET fail_count = vote_rate_limits.fail_count + 1, updated_at = EXCLUDED.updated_at;
     
-    INSERT INTO audit_logs (action, details) VALUES ('LOGIN_FAIL', jsonb_build_object('reason', 'NIM Not Found', 'nim', p_nim));
+    INSERT INTO audit_logs (action, details) VALUES ('LOGIN_FAIL', jsonb_build_object('reason', 'NIM Not Found', 'nim', p_nim, 'ip', v_ip, 'userAgent', v_ua));
     RETURN jsonb_build_object('status', 'error', 'message', 'NIM tidak terdaftar dalam DPT.');
   END IF;
 
@@ -269,13 +269,13 @@ BEGIN
       UPDATE vote_rate_limits SET blocked_until = v_now + v_window WHERE client_key = v_client_key;
     END IF;
 
-    INSERT INTO audit_logs (action, details) VALUES ('LOGIN_FAIL', jsonb_build_object('reason', 'Wrong Token', 'nim', p_nim));
+    INSERT INTO audit_logs (action, details) VALUES ('LOGIN_FAIL', jsonb_build_object('reason', 'Wrong Token', 'nim', p_nim, 'ip', v_ip, 'userAgent', v_ua));
     RETURN jsonb_build_object('status', 'error', 'message', 'Kode Akses salah.');
   END IF;
 
   -- Check already voted
   IF v_voter.has_voted THEN
-    INSERT INTO audit_logs (action, details) VALUES ('LOGIN_FAIL', jsonb_build_object('reason', 'Already Voted', 'nim', p_nim));
+    INSERT INTO audit_logs (action, details) VALUES ('LOGIN_FAIL', jsonb_build_object('reason', 'Already Voted', 'nim', p_nim, 'ip', v_ip, 'userAgent', v_ua));
     RETURN jsonb_build_object('status', 'error', 'message', 'Mahasiswa ini sudah menggunakan hak pilihnya.');
   END IF;
 
@@ -285,7 +285,7 @@ BEGIN
   INSERT INTO votes (candidate_id) VALUES (p_candidate_id);
 
   INSERT INTO audit_logs (action, details) 
-  VALUES ('VOTE_SUCCESS', jsonb_build_object('nim', p_nim, 'faculty', v_voter.faculty));
+  VALUES ('VOTE_SUCCESS', jsonb_build_object('nim', p_nim, 'faculty', v_voter.faculty, 'ip', v_ip, 'userAgent', v_ua));
 
   RETURN jsonb_build_object('status', 'success', 'message', 'Suara berhasil direkam. Terima kasih!');
 END;
