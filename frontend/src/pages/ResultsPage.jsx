@@ -142,7 +142,7 @@ export default function ResultsPage() {
 
   return (
     <Layout>
-      <div className="w-full space-y-8 pt-6 pb-20">
+      <div className="w-full space-y-8 pt-0 pb-20">
         <Toast
           open={toast.open}
           variant="error"
@@ -152,7 +152,8 @@ export default function ResultsPage() {
         />
 
         {/* Sticky Header with Glassmorphism */}
-        <div className="sticky top-16 z-30 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-4 bg-white/80 backdrop-blur-xl border-b border-zinc-200/50 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
+        {/* Header Block */}
+        <div className="relative rounded-2xl px-5 py-4 bg-white/90 backdrop-blur-xl border border-zinc-200/50 flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm">
           <div className="text-center sm:text-left">
             <h1 className="text-2xl font-bold tracking-tight text-zinc-900">Hasil Suara BEM</h1>
             <div className="flex items-center justify-center sm:justify-start gap-2 text-xs font-medium text-zinc-500 mt-1">
