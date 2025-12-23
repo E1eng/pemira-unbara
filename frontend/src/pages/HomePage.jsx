@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { BarChart3, LockKeyhole, UserCog, Vote, ChevronRight, Shield, Clock } from 'lucide-react'
+import { BarChart3, LockKeyhole, UserCog, Vote, ChevronRight, Shield, Clock, Users, Instagram } from 'lucide-react'
 import Layout from '../components/Layout.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { supabase } from '../lib/supabaseClient.js'
@@ -14,15 +14,23 @@ import { cn } from '../lib/utils.js'
 export default function HomePage() {
   const { nim, isAuthenticated, logout } = useAuth()
   const [settings, setSettings] = useState(null)
+  const [dptCount, setDptCount] = useState(0)
   const [recapSummary, setRecapSummary] = useState({ total: null, leader: null })
 
   useEffect(() => {
     let cancelled = false
 
     const load = async () => {
-      const { data, error } = await supabase.from('election_settings').select('is_voting_open, show_live_result').single()
+      // Parallel fetch settings and DPT
+      const [settingsRes, votersRes] = await Promise.all([
+        supabase.from('election_settings').select('is_voting_open, show_live_result').single(),
+        supabase.from('voters').select('*', { count: 'exact', head: true })
+      ])
+
       if (cancelled) return
-      if (!error && data) setSettings(data)
+
+      if (!settingsRes.error && settingsRes.data) setSettings(settingsRes.data)
+      if (votersRes.count !== null) setDptCount(votersRes.count)
     }
 
     load()
@@ -66,7 +74,7 @@ export default function HomePage() {
 
   return (
     <Layout>
-      <div className="space-y-12 pb-20">
+      <div className="space-y-12 pb-6">
         {/* Hero Section - Premium Dark */}
         <div className="relative overflow-hidden rounded-[2.5rem] bg-zinc-900 border border-zinc-800 shadow-2xl">
           <div className="absolute inset-0 h-full w-full opacity-60">
@@ -158,21 +166,20 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Total Votes */}
+          {/* Total DPT */}
           <div className="group relative rounded-3xl border border-zinc-200 bg-white p-6 transition-all duration-300 hover:border-indigo-200 hover:shadow-lg hover:shadow-indigo-500/5 sm:col-span-2">
             <div className="flex items-center gap-6">
               <div className="p-4 rounded-2xl bg-indigo-50 text-indigo-600">
-                <Vote className="w-8 h-8" />
+                <Users className="w-8 h-8" />
               </div>
               <div>
-                <p className="text-sm font-medium text-zinc-500 mb-1">Total Suara Masuk</p>
-                <div className="flex items-baseline gap-2">
+                <p className="text-sm font-medium text-zinc-500 mb-1">Total Daftar Pemilih</p>
+                <div className="flex items-center gap-2">
                   <h3 className="text-4xl font-bold text-zinc-900 tracking-tight">
-                    {recapSummary.total?.toLocaleString() ?? 0}
+                    {dptCount.toLocaleString()}
                   </h3>
-                  <span className="text-sm text-zinc-400 font-medium">suara</span>
+                  <span className="text-xl text-zinc-500 font-medium">mahasiswa</span>
                 </div>
-                {/* Leader info removed as per user request */}
               </div>
             </div>
           </div>
@@ -219,7 +226,27 @@ export default function HomePage() {
         </div>
 
         {/* Footer simple mark */}
-        <div className="text-center pt-8 pb-4">
+        <div className="text-center pt-0 pb-8 flex flex-col items-center gap-3">
+          <div className="flex gap-3 flex-wrap justify-center">
+            <a
+              href="https://instagram.com/bemkmunbara"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/50 border border-zinc-200 text-zinc-600 hover:text-pink-600 hover:border-pink-200 hover:bg-pink-50 transition-all duration-300 group"
+            >
+              <Instagram className="h-4 w-4 group-hover:scale-110 transition-transform" />
+              <span className="text-sm font-semibold">Instagram BEM</span>
+            </a>
+            <a
+              href="https://instagram.com/dpm.unbara"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/50 border border-zinc-200 text-zinc-600 hover:text-pink-600 hover:border-pink-200 hover:bg-pink-50 transition-all duration-300 group"
+            >
+              <Instagram className="h-4 w-4 group-hover:scale-110 transition-transform" />
+              <span className="text-sm font-semibold">Instagram DPM</span>
+            </a>
+          </div>
           <p className="text-xs text-zinc-300 font-medium">
             Sistem terenkripsi & terverifikasi oleh KPU Kemahasiswaan
           </p>
