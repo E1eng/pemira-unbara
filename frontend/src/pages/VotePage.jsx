@@ -141,13 +141,26 @@ export default function VotePage() {
     }
 
     setSubmitting(true)
+
+    // Fetch IP for audit logs
+    let clientIp = 'unknown'
+    try {
+      const ipRes = await fetch('https://api.ipify.org?format=json', { signal: AbortSignal.timeout(3000) })
+      if (ipRes.ok) {
+        const ipData = await ipRes.json()
+        clientIp = ipData.ip || 'unknown'
+      }
+    } catch (e) {
+      console.warn('Failed to fetch IP:', e)
+    }
+
     await new Promise(r => setTimeout(r, 800)) // UX delay
 
     const { data, error } = await supabase.rpc('submit_vote', {
       p_nim: nim,
       p_access_code_plain: accessCode,
       p_candidate_id: selectedCandidate.id,
-      p_client_info: { userAgent: navigator.userAgent },
+      p_client_info: { userAgent: navigator.userAgent, ip: clientIp },
     })
 
     setSubmitting(false)
