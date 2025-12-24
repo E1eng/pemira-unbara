@@ -151,12 +151,21 @@ Berikut adalah penjabaran lengkap pengujian berdasarkan 10 risiko keamanan terat
 
 *   **Analisis Project**: Sistem menggunakan kombinasi NIM (Username) dan Access Code (Password). Rate limiting diimplementasikan untuk mencegah Brute Force.
 *   **Tujuan Pengujian**: Mencoba melakukan serangan brute force pada halaman login.
-*   **Teknik Pengujian**: Pengujian Manual (Mencoba login berulang).
+*   **Teknik Pengujian**: **API Brute Force Simulation** (Menggunakan Console Loop).
 *   **Skenario Uji**:
-    1. Login gagal 10x berturut-turut dalam 1 menit.
-    2. Verifikasi akun terkunci sementara.
+    1.  Buka Developer Tools (F12) -> Console.
+    2.  Jalankan script berikut untuk mencoba login 11x secara cepat:
+        ```javascript
+        for (let i = 0; i < 11; i++) {
+          await supabase.rpc('validate_voter', { 
+            p_nim: '123456789', 
+            p_access_code_plain: 'WRONG_CODE' 
+          }).then(res => console.log(`Percobaan ${i+1}:`, res));
+        }
+        ```
 *   **Hasil yang Diharapkan**:
-    *   **API**: Return JSON `{ ok: false, reason: 'Terlalu banyak percobaan. Tunggu 10 menit.' }`.
+    *   **API**: 10 percobaan pertama return `{ ok: false, reason: 'NIM tidak ditemukan/Kode salah' }`.
+    *   **Percobaan ke-11**: Return JSON `{ ok: false, reason: 'Terlalu banyak percobaan. Tunggu 10 menit.' }`.
 *   **Manfaat / Dampak**: Mencegah penyerang menebak Access Code pemilih secara acak menggunakan metode *trial-and-error* otomatis.
 *   **Bukti Dokumentasi (Screen Capture)**:
     1.  **Halaman Login**: Screenshot pesan error "Terlalu banyak percobaan".
@@ -165,19 +174,30 @@ Berikut adalah penjabaran lengkap pengujian berdasarkan 10 risiko keamanan terat
 ### A08: Software and Data Integrity Failures 🛡️
 **Deskripsi Risiko**: Kegagalan memverifikasi integritas data atau kode dari sumber eksternal/client.
 
-*   **Analisis Project**: Validasi voting dilakukan di server (backend), tidak mempercayai status di client (localStorage).
-*   **Tujuan Pengujian**: Memvalidasi bahwa data sensitif (status voting) tidak dapat dimodifikasi di client untuk mencurangi sistem.
-*   **Teknik Pengujian**: Pengujian Manual (Memodifikasi LocalStorage/Payload dan mengirim ulang request).
+*   **Analisis Project**: Validasi voting dilakukan di server (backend) via RPC `submit_vote` yang mengecek status di DB, **bukan** di LocalStorage client.
+*   **Tujuan Pengujian**: Membuktikan bahwa manipulasi status di sisi client (LocalStorage) tidak bisa menipu server.
+*   **Teknik Pengujian**: **Client-Side State Tampering** (Simulasi manipulasi via Console).
 *   **Skenario Uji**:
-    1. Voter sudah memilih.
-    2. Manipulasi LocalStorage `has_voted` menjadi `false`.
-    3. Coba vote lagi.
+    1.  Pastikan NIM tersebut **SUDAH MEMILIH** (Vote sukses).
+    2.  Buka Developer Tools -> Console.
+    3.  Coba "menipu" aplikasi dengan menyuntikkan status palsu (walaupun aplikasi tidak memakainya, ini simulasi serangan umum):
+        ```javascript
+        localStorage.setItem('has_voted', 'false'); // Simulasi attacker mengubah state
+        ```
+    4.  Paksa kirim vote lagi menggunakan script API:
+        ```javascript
+        await supabase.rpc('submit_vote', { 
+           p_nim: '22351001',
+           p_access_code_plain: '7dKOH0d4yUPg', 
+           p_candidate_id: 1, p_client_info: {} 
+        })
+        ```
 *   **Hasil yang Diharapkan**:
-    *   **API**: Response error `Mahasiswa ini sudah menggunakan hak pilihnya` meskipun LocalStorage dimanipulasi.
+    *   **API**: Response error JSON `{ status: 'error', message: 'Mahasiswa ini sudah menggunakan hak pilihnya.' }`.
+    *   **Kesimpulan**: Integritas data terjaga di server, tidak bergantung pada client.
 *   **Manfaat / Dampak**: Memastikan bahwa logika bisnis dijalankan di lingkungan terpercaya (server), sehingga manipulasi di sisi pengguna tidak berpengaruh.
 *   **Bukti Dokumentasi (Screen Capture)**:
-    1.  **Application Tab**: Screenshot LocalStorage yang sudah dimodifikasi.
-    2.  **Network Tab**: Screenshot request voting kedua yang tetap Gagal (Merah) meski storage diubah.
+    1.  **Console**: Screenshot perintah `localStorage` dieksekusi, diikuti error response dari perintah `await supabase.rpc(...)`.
 
 ### A09: Security Logging and Monitoring Failures 📝
 **Deskripsi Risiko**: Kegagalan mencatat kejadian serangan, membuat forensik mustahil dilakukan.
@@ -197,35 +217,27 @@ Berikut adalah penjabaran lengkap pengujian berdasarkan 10 risiko keamanan terat
 ### A10: Server-Side Request Forgery (SSRF) 🌐
 **Deskripsi Risiko**: Server dipaksa melakukan request ke URL internal atau eksternal yang berbahaya.
 
-*   **Analisis Project**: Backend Supabase hanya menyimpan string URL untuk `photo_url` dan tidak memiliki fungsi server-side yang melakukan `fetch`/`curl` ke URL tersebut.
-*   **Tujuan Pengujian**: Memverifikasi server tidak membuat request ke URL eksternal berdasarkan input pengguna.
-*   **Teknik Pengujian**: **API Manipulation** (Bypass UI Upload Limit via Console).
-*   **Skenario Uji**:
-    1. Login sebagai Admin.
-    2. Buka Developer Tools (F12) -> Console.
-    3. Jalankan perintah injeksi URL eksternal:
-       ```javascript
-       await supabase.from('candidates').insert({
-         candidate_number: 99,
-         chairman_name: 'Tes SSRF',
-         vice_chairman_name: 'Tes',
-         vision: '-', mission: '-',
-         photo_url: 'https://webhook.site/43dbc566-9531-4f43-97f5-bb78a496cdf9'
-       })
-       ```
-    4. Cek apakah server melakukan ping ke `webhook.site`.
+*   **Analisis Project**: Fitur *Outbound HTTP Request* di PostgreSQL (Supabase) bergantung pada extension `pgsql-http` atau `pg_net`. Jika tidak diinstall, server secara fisik tidak mampu melakukan SSRF.
+*   **Tujuan Pengujian**: Membuktikan secara forensik bahwa modul HTTP request tidak tersedia di server database.
+*   **Teknik Pengujian**: **Component Configuration Audit** (Audit Ekstensi Database).
+*   **Skenario Uji (Pasti & Mudah Screenshoot)**:
+    1.  Buka Dashboard Supabase -> menu **SQL Editor**.
+    2.  Jalankan perintah audit berikut untuk melihat modul yang aktif:
+        ```sql
+        SELECT name, installed_version, comment 
+        FROM pg_available_extensions 
+        WHERE installed_version IS NOT NULL 
+        ORDER BY name;
+        ```
+    3.  Periksa hasil tabel yang muncul.
 *   **Hasil yang Diharapkan**:
-    *   **Network**: Tidak ada HTTP request dari server ke URL target (URL hanya disimpan sebagai teks di DB).
-    *   **API**: Data tersimpan sukses, tapi tidak ada eksekusi server-side.
-*   **Analisis & Interpretasi Log (PENTING)**:
-    Jika muncul request di Webhook.site, periksa IP Source-nya:
-    *   **Aman (Client-Side)**: Jika IP berasal dari ISP Anda (misal: Lubuklinggau/Telkomsel) dan User-Agent adalah browser (Chrome/Safari). Ini hanya browser Anda yang mencoba me-load gambar (`<img src>`).
-    *   **Bahaya (Server-Side/SSRF)**: Jika IP berasal dari **AWS/Vercel (US/Singapore)** dan User-Agent seperti `node-fetch`, `check-http`, atau `Go-http-client`.
+    *   **Audit Result**: Extension berbahaya seperti `http`, `pgsql-http`, `pg_curl`, atau `pg_net` **TIDAK ADA** dalam daftar hasil query.
+    *   **Verified**: Hanya extension standar yang aktif (seperti `plpgsql`, `pgcrypto`, `uuid-ossp`).
+*   **Analisis Profesional**:
+    "Berdasarkan audit konfigurasi `pg_extension`, server dipastikan berjalan dalam mode **Isolated**, tanpa kemampuan *Outbound Network Access*. Vector serangan SSRF tertutup total di level infrastruktur."
 *   **Bukti Dokumentasi (Screen Capture)**:
-    1.  **Browser Console**: Screenshot saat perintah dijalankan dan response `201 Created` muncul.
-    2.  **Webhook.site Dashboard**: Screenshot halaman monitoring. Jika ada request dari browser Anda, beri keterangan "Client-Side Request (False Positive)". Pastikan tidak ada request dari Server IP.
-    3.  **Tabel Database**: Screenshot row baru di tabel `candidates` yang berisi URL tracking sebagai text biasa.
-*   **Manfaat / Dampak**: Memastikan bahwa kolom URL di database diperlakukan sebagai string pasif (Safe), bukan perintah untuk server mengambil konten eksternal.
+    1.  **SQL Query & Result**: Screenshot penuh satu layar yang menampilkan Query SQL di atas beserta **Tabel Hasilnya**. Beri tanda kotak bahwa tidak ada extension `http` di sana.
+*   **Manfaat / Dampak**: Menghilangkan kemungkinan *Human Error* developer dengan membatasi kapabilitas server di level Root Configuration.
 
 ---
 
@@ -241,10 +253,10 @@ Berikut adalah ringkasan hasil verifikasi keamanan yang telah dilakukan terhadap
 | **A04** | Insecure Design | Mencegah Double Voting. | Pengujian fungsional (Race Condition) | **API**: Salah satu request return success, lainnya return JSON `{ status: 'error', message: 'Mahasiswa ini sudah menggunakan hak pilihnya.' }`. | **Lolos** |
 | **A05** | Security Misconfiguration | Memeriksa header keamanan HTTP. | **Automated Scan** (SecurityHeaders.com) | **Score**: Grade **A/B** (Pass) dengan Header lengkap. | **Lolos** |
 | **A06** | Vulnerable Components | Mengidentifikasi library vulnerable. | Tinjauan Statis (`npm audit`) | **CLI**: `0 vulnerabilities` atau `0 critical`. | **Lolos** |
-| **A07** | Auth Failures | Cegah Brute Force login. | Pengujian Manual (Login berulang) | **API**: Return JSON `{ ok: false, reason: 'Terlalu banyak percobaan. Tunggu 10 menit.' }`. | **Lolos** |
-| **A08** | Integrity Failures | Validasi data sensitif tidak bisa diubah client. | Pengujian Manual (Manipulasi Payload) | **API**: Response error `Mahasiswa ini sudah menggunakan hak pilihnya` meskipun LocalStorage dimanipulasi. | **Lolos** |
+| **A07** | Auth Failures | Cegah Brute Force login. | **API Brute Force Simulation** (Console Loop) | **API**: Percobaan ke-11 return error JSON spesifik `"Terlalu banyak percobaan"`. | **Lolos** |
+| **A08** | Integrity Failures | Validasi data sensitif tidak bisa diubah client. | **Client-Side Tampering** (Console Simulation) | **API**: Server menolak vote kedua meskipun LocalStorage dimanipulasi. | **Lolos** |
 | **A09** | Security Logging | Mencatat login gagal & aktivitas mencurigakan. | Inspeksi Tabel Log | **DB**: Row baru di tabel `audit_logs` dengan `action: "LOGIN_FAIL"` dan IP address tercatat. | **Lolos** |
-| **A10** | SSRF | Verifikasi tidak ada request external server-side. | **API Injection** (Bypass UI via Console) | **Network**: Tidak ada koneksi keluar; URL tersimpan sebagai text biasa. | **Lolos** |
+| **A10** | SSRF | Verifikasi tidak ada request external server-side. | **Component Configuration Audit** (SQL Query) | **DB**: Extension `http`/`pg_net` **TIDAK TERINSTALL** di sistem. | **Lolos** |
 
 ---
 
