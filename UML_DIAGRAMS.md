@@ -48,19 +48,19 @@ Menggambarkan alur aktivitas pemilih mulai dari login hingga selesai memilih.
 
 ```mermaid
 flowchart TD
-    Start((Mulai)) --> Login["Input NIM & Kode Akses"]
-    Login --> Validasi{"Validasi Kredensial?"}
+    Start((Mulai)) --> Login[Input NIM dan Kode Akses]
+    Login --> Validasi{Validasi Kredensial?}
     
-    Validasi -- "Gagal (Salah/Tidak Terdaftar)" --> ErrorLogin[Tampilkan Pesan Error]
+    Validasi -- "Gagal - Salah atau Tidak Terdaftar" --> ErrorLogin[Tampilkan Pesan Error]
     ErrorLogin --> Login
     
-    Validasi -- Sukses --> CekStatus{"Sudah Memilih?"}
+    Validasi -- Sukses --> CekStatus{Sudah Memilih?}
     CekStatus -- Ya --> RedirectResult[Redirect ke Hasil Sementara]
     RedirectResult --> Finish((Selesai))
     
     CekStatus -- Belum --> Dashboard[Halaman Daftar Kandidat]
-    Dashboard --> Pilih["Pilih Kandidat (Klik tombol Pilih)"]
-    Pilih --> Konfirmasi{"Konfirmasi Pilihan?"}
+    Dashboard --> Pilih[Pilih Kandidat - Klik tombol Pilih]
+    Pilih --> Konfirmasi{Konfirmasi Pilihan?}
     
     Konfirmasi -- Batal --> Dashboard
     Konfirmasi -- Ya --> SubmitVote[Kirim Suara ke Server]
@@ -205,23 +205,23 @@ Menggambarkan arsitektur fisik deployment aplikasi di Vercel dan Supabase.
 ```mermaid
 graph TD
     subgraph Client_Device [Perangkat Pengguna]
-        Browser["Web Browser (Chrome/Safari)"]
+        Browser[Web Browser - Chrome atau Safari]
     end
 
     subgraph Cloud_Infrastructure [Cloud Infrastructure]
-        subgraph Vercel_Cloud [Vercel (Frontend Hosting)]
+        subgraph Vercel_Cloud [Vercel - Frontend Hosting]
             ReactApp[React JS Application]
-            CDN[CDN & Static Assets]
+            CDN[CDN dan Static Assets]
         end
         
-        subgraph Supabase_Cloud [Supabase (Backend as a Service)]
+        subgraph Supabase_Cloud [Supabase - Backend as a Service]
             Postgres[PostgreSQL Database]
-            Auth["Supabase Auth (JWT)"]
-            Storage["Supabase Storage (Images)"]
+            Auth[Supabase Auth - JWT]
+            Storage[Supabase Storage - Images]
             
             subgraph Security_Layer [Security Layer]
                 RLS[Row Level Security]
-                RPC["RPC Functions (Logic)"]
+                RPC[RPC Functions - Logic]
             end
         end
     end
