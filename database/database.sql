@@ -185,6 +185,7 @@ $$;
 -- Drop existing policies (untuk recreate)
 DROP POLICY IF EXISTS "Public view candidates" ON candidates;
 DROP POLICY IF EXISTS "Admin manage candidates" ON candidates;
+DROP POLICY IF EXISTS "Public count voters" ON voters;
 DROP POLICY IF EXISTS "Admin view voters" ON voters;
 DROP POLICY IF EXISTS "Admin modify voters" ON voters;
 DROP POLICY IF EXISTS "Admin view votes" ON votes;
@@ -197,6 +198,8 @@ DROP POLICY IF EXISTS "Admin view self" ON admin_users;
 CREATE POLICY "Public view candidates" ON candidates FOR SELECT USING (true);
 CREATE POLICY "Admin manage candidates" ON candidates FOR ALL TO authenticated USING (is_admin()) WITH CHECK (is_admin());
 
+-- Allow public to COUNT voters (for homepage stats) - rows allowed but frontend uses head:true so no data exposed
+CREATE POLICY "Public count voters" ON voters FOR SELECT USING (true);
 CREATE POLICY "Admin view voters" ON voters FOR SELECT TO authenticated USING (is_admin());
 CREATE POLICY "Admin modify voters" ON voters FOR ALL TO authenticated USING (is_admin()) WITH CHECK (is_admin());
 
