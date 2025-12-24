@@ -12,18 +12,16 @@ usecaseDiagram
     actor "Pemilih (Voter)" as Voter
     actor "Administrator" as Admin
 
-    package "Sistem E-Voting BEM" {
-        usecase "Login (NIM & Access Code)" as UC1
-        usecase "Melihat Daftar Kandidat" as UC2
-        usecase "Melakukan Voting (Coblos)" as UC3
-        usecase "Melihat Hasil Sementara (Real Count)" as UC4
-        
-        usecase "Login Admin" as UC5
-        usecase "Kelola Data Kandidat" as UC6
-        usecase "Kelola Data DPT (Import CSV)" as UC7
-        usecase "Monitoring Hasil & Log Audit" as UC8
-        usecase "Buka/Tutup Voting" as UC9
-    }
+    usecase "Login (NIM & Access Code)" as UC1
+    usecase "Melihat Daftar Kandidat" as UC2
+    usecase "Melakukan Voting (Coblos)" as UC3
+    usecase "Melihat Hasil Sementara (Real Count)" as UC4
+    
+    usecase "Login Admin" as UC5
+    usecase "Kelola Data Kandidat" as UC6
+    usecase "Kelola Data DPT (Import CSV)" as UC7
+    usecase "Monitoring Hasil & Log Audit" as UC8
+    usecase "Buka/Tutup Voting" as UC9
 
     Voter --> UC1
     Voter --> UC2
@@ -50,19 +48,19 @@ Menggambarkan alur aktivitas pemilih mulai dari login hingga selesai memilih.
 
 ```mermaid
 flowchart TD
-    Start((Mulai)) --> Login[Input NIM & Kode Akses]
-    Login --> Validasi{Validasi Kredensial?}
+    Start((Mulai)) --> Login["Input NIM & Kode Akses"]
+    Login --> Validasi{"Validasi Kredensial?"}
     
-    Validasi -- Gagal (Salah/Tidak Terdaftar) --> ErrorLogin[Tampilkan Pesan Error]
+    Validasi -- "Gagal (Salah/Tidak Terdaftar)" --> ErrorLogin[Tampilkan Pesan Error]
     ErrorLogin --> Login
     
-    Validasi -- Sukses --> CekStatus{Sudah Memilih?}
+    Validasi -- Sukses --> CekStatus{"Sudah Memilih?"}
     CekStatus -- Ya --> RedirectResult[Redirect ke Hasil Sementara]
     RedirectResult --> Finish((Selesai))
     
     CekStatus -- Belum --> Dashboard[Halaman Daftar Kandidat]
-    Dashboard --> Pilih[Pilih Kandidat (Klik tombol Pilih)]
-    Pilih --> Konfirmasi{Konfirmasi Pilihan?}
+    Dashboard --> Pilih["Pilih Kandidat (Klik tombol Pilih)"]
+    Pilih --> Konfirmasi{"Konfirmasi Pilihan?"}
     
     Konfirmasi -- Batal --> Dashboard
     Konfirmasi -- Ya --> SubmitVote[Kirim Suara ke Server]
@@ -207,7 +205,7 @@ Menggambarkan arsitektur fisik deployment aplikasi di Vercel dan Supabase.
 ```mermaid
 graph TD
     subgraph Client_Device [Perangkat Pengguna]
-        Browser[Web Browser (Chrome/Safari)]
+        Browser["Web Browser (Chrome/Safari)"]
     end
 
     subgraph Cloud_Infrastructure [Cloud Infrastructure]
@@ -218,12 +216,12 @@ graph TD
         
         subgraph Supabase_Cloud [Supabase (Backend as a Service)]
             Postgres[PostgreSQL Database]
-            Auth[Supabase Auth (JWT)]
-            Storage[Supabase Storage (Images)]
+            Auth["Supabase Auth (JWT)"]
+            Storage["Supabase Storage (Images)"]
             
             subgraph Security_Layer [Security Layer]
                 RLS[Row Level Security]
-                RPC[RPC Functions (Logic)]
+                RPC["RPC Functions (Logic)"]
             end
         end
     end
