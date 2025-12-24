@@ -169,7 +169,7 @@ export default function LoginPage() {
 
           <div className="mt-6 text-center">
             <p className="text-xs text-zinc-500">
-              &copy; 2025 Panitia Pemilihan Raya BEM
+              &copy; 2025 Panitia Pemilihan Raya UNBARA
             </p>
           </div>
         </div>

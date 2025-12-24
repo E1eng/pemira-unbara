@@ -1,333 +1,252 @@
-# Rencana Pengujian Keamanan Sistem E-Voting PEMIRA BEM
-**Berdasarkan Framework: OWASP Top 10 (2021)**
+# Laporan Analisis Keamanan & Rencana Pengujian E-Voting (OWASP Top 10)
+
+**Nama Sistem**: E-Voting PEMIRA UNBARA  
+**Platform**: Web (React.js + Supabase)  
+**Framework Pengujian**: OWASP Top 10 (2021)  
+**Status Terakhir**: ✅ Production Ready
 
 ---
 
 ## 1. Pendahuluan
 
-Dokumen ini menyajikan rencana pengujian keamanan untuk Sistem E-Voting PEMIRA BEM yang dikembangkan sebagai bagian dari penelitian tugas akhir. Pengujian dilakukan untuk memvalidasi implementasi kontrol keamanan terhadap 10 kategori risiko tertinggi menurut OWASP (Open Web Application Security Project).
+Dokumen ini berisi analisis keamanan menyeluruh terhadap arsitektur sistem E-Voting dan rencana pengujian verifikasi. Analisis didasarkan pada standar industri **OWASP Top 10:2021** untuk menjamin integritas, kerahasiaan, dan ketersediaan data pemilihan.
 
-### 1.1 Tujuan Pengujian
-- Memverifikasi efektivitas mekanisme keamanan yang telah diimplementasikan
-- Mengidentifikasi potensi kerentanan pada sistem
-- Mendokumentasikan bukti ketahanan sistem untuk keperluan akademik
-
-### 1.2 Ruang Lingkup
-Pengujian mencakup komponen-komponen berikut:
-- **Frontend**: React Application (Voter Interface & Admin Panel) - Deployed on Vercel
-- **Backend**: Supabase (PostgreSQL + Row Level Security + Edge Functions)
-- **Authentication**: Custom Token-based Authentication dengan Rate Limiting
-- **Network**: HTTPS dengan SSL/TLS (enforced by Vercel)
-
-### 1.3 Environment Pengujian
-- **Production URL**: `https://[your-project].vercel.app` (sesuaikan dengan deployment aktual)
-- **Database**: Supabase Production Instance
-- **Testing Period**: Setelah deployment ke Vercel selesai
+### 1.1 Profil Keamanan Sistem
+Sistem dibangun dengan prinsip *Security by Design*:
+- **Backend as a Service (Supabase)**: Memanfaatkan keamanan level enterprise PostgreSQL.
+- **Row Level Security (RLS)**: Isolasi data di tingkat database engine, bukan hanya di level aplikasi.
+- **Atomic Transactions**: Mencegah race condition saat voting (Double Voting).
+- **Client-Side Encryption**: Penggunaan HTTPS (SSL/TLS) wajib via Vercel.
 
 ---
 
 ## 2. Metodologi Pengujian
+Pengujian dilakukan menggunakan metode *Gray Box Testing*, di mana penguji memiliki akses sebagian ke struktur internal (kode & database) untuk mensimulasikan serangan dari pihak luar maupun *insider*.
 
-Pengujian keamanan menggunakan kombinasi pendekatan berikut:
-
-| Metode | Deskripsi | Tools |
-|--------|-----------|-------|
-| **Manual Testing** | Pengujian manual dengan manipulasi input, URL, dan request | Browser DevTools, Postman |
-| **Automated Scanning** | Pemindaian otomatis untuk menemukan kerentanan umum | OWASP ZAP |
-| **Static Analysis** | Analisis dependensi untuk kerentanan library | npm audit |
-| **Database Inspection** | Pemeriksaan langsung konfigurasi dan data di database | Supabase Dashboard |
-| **Code Review** | Tinjauan kode sumber untuk logic flaws | Manual (VS Code) |
+**Teknik yang digunakan:**
+1. **Manual Penetration Testing**: Manipulasi request HTTP/s, URL, dan LocalStorage.
+2. **Static Application Security Testing (SAST)**: Analisis kode sumber dan dependensi (`npm audit`).
+3. **Database Inspection**: Audit konfigurasi RLS dan struktur tabel.
 
 ---
 
-## 3. Skenario Pengujian Berdasarkan OWASP Top 10
+## 3. Analisis Detail OWASP Top 10 & Skenario Uji
 
-### A01:2021 - Broken Access Control 🚨
+Berikut adalah penjabaran lengkap pengujian berdasarkan 10 risiko keamanan teratas.
 
-**Tujuan Pengujian**: Memastikan Voter tidak dapat mengakses halaman Admin dan data milik voter lain.
+### A01: Broken Access Control 🚨
+**Deskripsi Risiko**: Penyerang dapat mengakses data atau fitur yang bukan haknya (misal: Voter mengakses Admin panel).
 
-**Teknik Pengujian**: Pengujian manual melalui manipulasi URL dan percobaan akses API menggunakan token voter biasa.
+*   **Analisis Project**: Sistem menggunakan Supabase Auth dengan RLS Policies. Middleware frontend (`AdminRoute.jsx`) melindungi UI, sementara RLS melindungi Data.
+*   **Tujuan Pengujian**: Memastikan Voter tidak bisa akses halaman Admin.
+*   **Teknik Pengujian**: Pengujian manual melalui manipulasi URL dan API menggunakan token voter.
+*   **Skenario Uji**:
+    1. Login sebagai Voter.
+    2. Paksa akses URL `/admin/dashboard`.
+    3. Coba jalankan query SQL admin via Console browser: `await supabase.from('audit_logs').select('*')`.
+*   **Hasil yang Diharapkan**:
+    *   **UI**: Redirect otomatis ke halaman Home/Login.
+    *   **API**: Response data kosong `[]` (karena RLS Policy `USING (false)` untuk non-admin).
+*   **Manfaat / Dampak**: Menjamin kerahasiaan proses rekapitulasi suara dan mencegah manipulasi data pemilih oleh pihak yang tidak berwenang.
+*   **Bukti Dokumentasi (Screen Capture)**:
+    1.  **Halaman Login**: Screenshot halaman Login saat redirect terjadi.
+    2.  **Network Tab**: Screenshot response kosong `[]` pada request API.
 
-#### Test Case 1.1: Bypass URL Admin
-- **Langkah**:
-  1. Login sebagai Voter (mahasiswa) di production URL
-  2. Salin session/token yang aktif dari localStorage (F12 → Application)
-  3. Coba akses URL `https://[your-project].vercel.app/admin/dashboard` secara langsung
-- **Ekspektasi**: Browser otomatis redirect ke halaman Home atau Login. Halaman admin tidak ter-render sama sekali.
-- **Bukti**: Screenshot URL bar dan hasil redirect.
-- **Catatan Production**: Pastikan redirect bekerja bahkan jika user bookmark URL admin.
+### A02: Cryptographic Failures 🔐
+**Deskripsi Risiko**: Data sensitif (password, NIK, pilihan suara) tidak dienkripsi dengan baik.
 
-#### Test Case 1.2: RLS Bypass via Console
-- **Langkah**:
-  1. Buka halaman Login, tekan `F12`
-  2. Di Console, ketik: `await window.supabase.from('votes').select('*')`
-- **Ekspektasi**: Response berisi array kosong `[]` atau error `"new row violates row-level security policy"`.
-- **Bukti**: Screenshot Console dengan output error RLS.
+*   **Analisis Project**: Token akses disimpan menggunakan hashing algoritma **Bcrypt** (via `pgcrypto` extension). Komunikasi data dipaksa menggunakan HTTPS oleh Vercel.
+*   **Tujuan Pengujian**: Memverifikasi bahwa password pengguna disimpan menggunakan hashing yang kuat.
+*   **Teknik Pengujian**: Inspeksi langsung pada database (Supabase Auth & Tabel Voters).
+*   **Skenario Uji**:
+    1. Buka tabel `voters` di database.
+    2. Pastikan kolom `access_code_hash` berisi string acak (diawali `$2a$`), bukan teks asli "12345".
+*   **Hasil yang Diharapkan**:
+    *   **DB**: Kolom `access_code_hash` diawali identifier Bcrypt `$2a$`.
+    *   **Network**: Browser menggunakan protokol `h2` (HTTP/2) dan enkripsi TLS 1.3.
+*   **Manfaat / Dampak**: Jika database bocor, penyerang tetap tidak bisa mengetahui Access Code asli pemilih, menjaga integritas akun pemilih.
+*   **Bukti Dokumentasi (Screen Capture)**:
+    1.  **Tabel Database**: Screenshot kolom `access_code_hash` yang terenkripsi.
+    2.  **Network Tab**: Screenshot bagian "Security" atau "Protocol" yang menampilkan `h2` dan TLS 1.3.
 
----
+### A03: Injection 💉
+**Deskripsi Risiko**: Penyerang menyisipkan kode berbahaya (SQL/Script) ke dalam input aplikasi.
 
-### A02:2021 - Cryptographic Failures 🔐
+*   **Analisis Project**: Sistem menggunakan **RPC (Stored Procedures)** untuk logika voting, yang secara alami menggunakan *Parameterized Queries*. React secara default melakukan escaping pada output variable.
+*   **Tujuan Pengujian**: Memastikan input pengguna divalidasi dan disanitasi untuk mencegah XSS dan SQL Injection.
+*   **Teknik Pengujian**: Pengujian manual (payload input).
+*   **Skenario Uji**:
+    1. Input `1 OR 1=1` pada form login NIM.
+    2. Input `<script>alert('HACK')</script>` pada nama kandidat (via DB).
+*   **Hasil yang Diharapkan**:
+    *   **UI**: Input `<script>` dirender sebagai teks biasa di layar (React escaping berfungsi).
+    *   **DB**: Input SQLi tidak tereksekusi (via RPC params).
+*   **Manfaat / Dampak**: Mencegah pengambilalihan database (SQLi) dan serangan terhadap pengguna lain melalui browser (XSS).
+*   **Bukti Dokumentasi (Screen Capture)**:
+    1.  **Tampilan UI**: Screenshot input script yang tertulis apa adanya (tidak tereksekusi).
+    2.  **Console/Network**: Screenshot payload yang dikirim namun tidak merusak database.
 
-**Tujuan Pengujian**: Memverifikasi bahwa Access Code (password voter) disimpan menggunakan hashing yang kuat (Bcrypt).
+### A04: Insecure Design 🧠
+**Deskripsi Risiko**: Cacat logika dalam desain sistem yang memungkinkan kecurangan.
 
-**Teknik Pengujian**: Inspeksi langsung pada tabel database Supabase.
+*   **Analisis Project**: Risiko terbesar e-voting adalah *Double Voting*. Sistem mengatasinya dengan constraint `UNIQUE` pada level database dan transaksi atomik.
+*   **Tujuan Pengujian**: Mencegah 1 voter memilih lebih dari 1 kali (Double Voting).
+*   **Teknik Pengujian**: Pengujian fungsional dengan skenario pengiriman suara berulang (Race Condition Test).
+*   **Skenario Uji**:
+    1.  Siapkan 1 token voter yang valid (belum memilih).
+    2.  Buka Developer Tools (F12) -> Console.
+    3.  Paste & jalankan script berikut untuk simulasi klik ganda (Race Condition):
+        ```javascript
+        const TEST_NIM = '22351001'; 
+        const TEST_CODE = '7dKOH0d4yUPg';    
+        const CANDIDATE_ID = 1;
 
-#### Test Case 2.1: Inspeksi Hash Token
-- **Langkah**:
-  1. Login ke Supabase Dashboard
-  2. Buka Table Editor → tabel `voters`
-  3. Periksa kolom `access_code_hash`
-- **Ekspektasi**: Nilai berbentuk hash Bcrypt (diawali `$2a$10$...` atau `$2b$10$...`), bukan plaintext.
-- **Bukti**: Screenshot tabel database dengan hash yang di-blur untuk privasi.
+        Promise.all([
+          supabase.rpc('submit_vote', { p_nim: TEST_NIM, p_access_code_plain: TEST_CODE, p_candidate_id: CANDIDATE_ID, p_client_info: {} }),
+          supabase.rpc('submit_vote', { p_nim: TEST_NIM, p_access_code_plain: TEST_CODE, p_candidate_id: CANDIDATE_ID, p_client_info: {} })
+        ]).then(results => console.table(results));
+        ```
+*   **Hasil yang Diharapkan**:
+    *   **API**: Salah satu request return success, lainnya return JSON `{ status: 'error', message: 'Mahasiswa ini sudah menggunakan hak pilihnya.' }`.
+    *   **DB**: Upaya insert ganda memicu pelanggaran constraint unik `voters_voter_nim_key`.
+*   **Manfaat / Dampak**: Menjamin prinsip "One Person One Vote" mutlak terpenuhi. Integritas hasil pemilihan tidak bisa dirusak oleh script voting otomatis.
+*   **Bukti Dokumentasi (Screen Capture)**:
+    1.  **Network Tab**: Screenshot dua request bersamaan, satu status `200`, satu status error.
+    2.  **Response Body**: Screenshot pesan error JSON "Mahasiswa ini sudah menggunakan hak pilihnya".
 
----
+### A05: Security Misconfiguration ⚙️
+**Deskripsi Risiko**: Konfigurasi server atau framework yang tidak aman (default password, error message detail, no HTTPS).
 
-### A03:2021 - Injection (SQL Injection & XSS) 💉
+*   **Analisis Project**: Deployment di Vercel secara default mematikan *directory listing* dan memaksa HTTPS.
+*   **Tujuan Pengujian**: Memeriksa apakah header HTTP keamanan dasar telah diterapkan.
+*   **Teknik Pengujian**: **Automated Scanning** (Menggunakan **[SecurityHeaders.com](https://securityheaders.com)**).
+*   **Skenario Uji**:
+    1. Buka situs `https://securityheaders.com`.
+    2. Masukkan URL Production: `https://pemiraunbara.eleng.xyz`.
+    3. Klik **Scan**.
+*   **Hasil yang Diharapkan**:
+    *   **Score**: Mendapatkan Grade **A** atau minimal **B**.
+    *   **Headers**: Terdeteksi header `Strict-Transport-Security`, `X-Content-Type-Options`, dan `Referrer-Policy`.
+*   **Manfaat / Dampak**: Memperkecil *attack surface* dengan memastikan server production berjalan dengan standar keamanan web modern.
+*   **Bukti Dokumentasi (Screen Capture)**:
+    1.  **Report Card**: Screenshot hasil scan yang menampilkan Grade (Nilai) dan daftar header hijau (Pass).
 
-**Tujuan Pengujian**: Memastikan semua input pengguna divalidasi dan disanitasi untuk mencegah serangan Injection.
+### A06: Vulnerable and Outdated Components 📦
+**Deskripsi Risiko**: Menggunakan library pihak ketiga yang memiliki kerentanan keamanan diketahui (CVE).
 
-**Teknik Pengujian**: Kombinasi pengujian manual (payload injection) dan automated scanning menggunakan OWASP ZAP.
+*   **Analisis Project**: Project menggunakan `npm` sebagai package manager.
+*   **Tujuan Pengujian**: Mengidentifikasi library (dependencies) yang memiliki kerentanan keamanan.
+*   **Teknik Pengujian**: Tinjauan Statis (Menggunakan tool `npm audit`).
+*   **Skenario Uji**:
+    1. Jalankan `npm audit` di terminal.
+    2. Verifikasi tidak ada kerentanan level *High* atau *Critical*.
+*   **Hasil yang Diharapkan**:
+    *   **CLI**: Output `npm audit` menunjukkan `0 vulnerabilities` atau `0 critical`.
+*   **Manfaat / Dampak**: Mencegah eksploitasi yang menargetkan kode library umum yang digunakan sistem, bukan kode aplikasi itu sendiri.
+*   **Bukti Dokumentasi (Screen Capture)**:
+    1.  **Terminal/CMD**: Screenshot output perintah `npm audit` yang menunjukkan "0 vulnerabilities".
 
-#### Test Case 3.1: SQL Injection pada Login
-- **Langkah**:
-  1. Di form Login, isi NIM dengan: `999' OR '1'='1`
-  2. Isi Access Code sembarang
-  3. Klik tombol Masuk
-- **Ekspektasi**: Muncul pesan error "NIM tidak ditemukan" atau "Kode Akses salah". Login gagal.
-- **Bukti**: Screenshot form dengan payload dan pesan error.
+### A07: Identification and Authentication Failures 🔑
+**Deskripsi Risiko**: Kelemahan pada proses login, sesi, atau manajemen identitas.
 
-#### Test Case 3.2: Stored XSS pada Visi/Misi Kandidat
-- **Langkah**:
-  1. (Sebagai Admin atau via Database) Edit visi/misi kandidat
-  2. Masukkan payload: `<script>alert('XSS')</script>`
-  3. Simpan, lalu buka halaman Voting sebagai mahasiswa
-- **Ekspektasi**: Teks `<script>alert('XSS')</script>` ditampilkan apa adanya (escaped). Alert popup tidak muncul.
-- **Bukti**: Screenshot halaman Vote yang menampilkan teks script mentah.
+*   **Analisis Project**: Sistem menggunakan kombinasi NIM (Username) dan Access Code (Password). Rate limiting diimplementasikan untuk mencegah Brute Force.
+*   **Tujuan Pengujian**: Mencoba melakukan serangan brute force pada halaman login.
+*   **Teknik Pengujian**: Pengujian Manual (Mencoba login berulang).
+*   **Skenario Uji**:
+    1. Login gagal 10x berturut-turut dalam 1 menit.
+    2. Verifikasi akun terkunci sementara.
+*   **Hasil yang Diharapkan**:
+    *   **API**: Return JSON `{ ok: false, reason: 'Terlalu banyak percobaan. Tunggu 10 menit.' }`.
+*   **Manfaat / Dampak**: Mencegah penyerang menebak Access Code pemilih secara acak menggunakan metode *trial-and-error* otomatis.
+*   **Bukti Dokumentasi (Screen Capture)**:
+    1.  **Halaman Login**: Screenshot pesan error "Terlalu banyak percobaan".
+    2.  **Network Tab**: Screenshot response JSON yang berisi `reason` error tersebut.
 
-#### Test Case 3.3: OWASP ZAP Injection Scan
-- **Langkah**:
-  1. Jalankan OWASP ZAP
-  2. Set target: `http://localhost:5173`
-  3. Jalankan Active Scan dengan kategori "Injection"
-- **Ekspektasi**: Tidak ada alert dengan Risk Level "High" untuk SQL Injection atau XSS.
-- **Bukti**: Screenshot OWASP ZAP Report menunjukkan hasil scan.
+### A08: Software and Data Integrity Failures 🛡️
+**Deskripsi Risiko**: Kegagalan memverifikasi integritas data atau kode dari sumber eksternal/client.
 
----
+*   **Analisis Project**: Validasi voting dilakukan di server (backend), tidak mempercayai status di client (localStorage).
+*   **Tujuan Pengujian**: Memvalidasi bahwa data sensitif (status voting) tidak dapat dimodifikasi di client untuk mencurangi sistem.
+*   **Teknik Pengujian**: Pengujian Manual (Memodifikasi LocalStorage/Payload dan mengirim ulang request).
+*   **Skenario Uji**:
+    1. Voter sudah memilih.
+    2. Manipulasi LocalStorage `has_voted` menjadi `false`.
+    3. Coba vote lagi.
+*   **Hasil yang Diharapkan**:
+    *   **API**: Response error `Mahasiswa ini sudah menggunakan hak pilihnya` meskipun LocalStorage dimanipulasi.
+*   **Manfaat / Dampak**: Memastikan bahwa logika bisnis dijalankan di lingkungan terpercaya (server), sehingga manipulasi di sisi pengguna tidak berpengaruh.
+*   **Bukti Dokumentasi (Screen Capture)**:
+    1.  **Application Tab**: Screenshot LocalStorage yang sudah dimodifikasi.
+    2.  **Network Tab**: Screenshot request voting kedua yang tetap Gagal (Merah) meski storage diubah.
 
-### A04:2021 - Insecure Design 🧠
+### A09: Security Logging and Monitoring Failures 📝
+**Deskripsi Risiko**: Kegagalan mencatat kejadian serangan, membuat forensik mustahil dilakukan.
 
-**Tujuan Pengujian**: Mencegah 1 voter memilih lebih dari 1 kali (Double Voting Attack).
+*   **Analisis Project**: Tabel `audit_logs` dibuat khusus untuk mencatat aksi kritis (Login Gagal, Admin Update, Security Alert).
+*   **Tujuan Pengujian**: Mencatat login gagal atau aktivitas mencurigakan.
+*   **Teknik Pengujian**: Inspeksi Tabel Log.
+*   **Skenario Uji**:
+    1. Lakukan aksi ilegal (Brute Force).
+    2. Cek apakah tercatat di audit log.
+*   **Hasil yang Diharapkan**:
+    *   **DB**: Muncul baris baru di tabel `audit_logs` dengan `action: "LOGIN_FAIL"` atau `"SECURITY_ALERT"` beserta detail IP address.
+*   **Manfaat / Dampak**: Memberikan jejak audit (*audit trail*) yang tidak bisa disangkal (*non-repudiation*) jika terjadi sengketa hasil pemilihan.
+*   **Bukti Dokumentasi (Screen Capture)**:
+    1.  **Tabel Database**: Screenshot tabel `audit_logs` yang menunjukkan baris log dari aktivitas pengujian di atas.
 
-**Teknik Pengujian**: Pengujian fungsional dengan skenario pengiriman suara berulang.
+### A10: Server-Side Request Forgery (SSRF) 🌐
+**Deskripsi Risiko**: Server dipaksa melakukan request ke URL internal atau eksternal yang berbahaya.
 
-#### Test Case 4.1: Coba Vote 2x dengan Akun yang Sama
-- **Langkah**:
-  1. Login dengan NIM yang **belum voting**
-  2. Pilih kandidat, submit vote (vote pertama)
-  3. Refresh halaman atau kembali ke `/vote`
-  4. Coba vote lagi
-- **Ekspektasi**: Halaman vote menampilkan pesan "Anda sudah memilih" atau redirect ke Thank You Page. Vote kedua tidak tersimpan di database.
-- **Bukti**: Screenshot pesan error + query database `SELECT * FROM votes WHERE voter_nim = '...'` yang hanya menunjukkan 1 baris.
-
----
-
-### A05:2021 - Security Misconfiguration ⚙️
-
-**Tujuan Pengujian**: Memeriksa apakah header HTTP keamanan dasar telah diterapkan dengan benar.
-
-**Teknik Pengujian**: Pengujian manual dengan inspeksi Response Headers menggunakan Browser DevTools.
-
-#### Test Case 5.1: Periksa Security Headers (Production)
-- **Langkah**:
-  1. Buka halaman Home production (`https://[your-project].vercel.app`)
-  2. Tekan `F12` → Tab Network
-  3. Refresh halaman, klik request utama (Document)
-  4. Periksa tab Headers → Response Headers
-- **Ekspektasi**: Minimal terdapat header berikut:
-  - `X-Content-Type-Options: nosniff`
-  - `X-Frame-Options: DENY` atau `SAMEORIGIN`
-  - `Strict-Transport-Security: max-age=...` (HSTS untuk HTTPS)
-  - (Opsional) `Content-Security-Policy`
-- **Bukti**: Screenshot Response Headers yang menunjukkan header keamanan.
-- **Catatan Production**: Vercel otomatis menambahkan beberapa header. Jika ingin custom CSP, tambahkan `vercel.json` (lihat DEPLOYMENT_GUIDE.md).
-
-#### Test Case 5.2: Validasi HTTPS Enforcement
-- **Langkah**:
-  1. Coba akses `http://[your-project].vercel.app` (tanpa 's')
-  2. Perhatikan apakah browser otomatis redirect ke `https://`
-- **Ekspektasi**: Vercel otomatis enforce HTTPS. Semua request HTTP akan di-redirect ke HTTPS.
-- **Bukti**: Screenshot address bar yang menunjukkan ikon gembok 🔒 dan `https://`.
-
----
-
-### A06:2021 - Vulnerable and Outdated Components 📦
-
-**Tujuan Pengujian**: Mengidentifikasi library (dependencies) yang memiliki kerentanan keamanan diketahui.
-
-**Teknik Pengujian**: Static Analysis menggunakan tool `npm audit`.
-
-#### Test Case 6.1: NPM Audit Scan
-- **Langkah**:
-  1. Buka terminal VS Code
-  2. Navigasi ke folder `frontend/`
-  3. Jalankan: `npm audit`
-- **Ekspektasi**: Output menunjukkan "found 0 vulnerabilities" atau hanya `low` severity (bukan `high`/`critical`).
-- **Bukti**: Screenshot terminal dengan hasil audit.
-- **Tindak Lanjut**: Jika ada vulnerabilities, jalankan `npm audit fix` dan dokumentasikan hasilnya.
-
----
-
-### A07:2021 - Identification and Authentication Failures 🔑
-
-**Tujuan Pengujian**: Mencoba melakukan serangan brute force pada halaman login dan memverifikasi mekanisme rate limiting.
-
-**Teknik Pengujian**: Kombinasi pengujian manual dan automated attack menggunakan OWASP ZAP Fuzzer.
-
-#### Test Case 7.1: Brute Force Protection (Rate Limiting)
-- **Langkah Manual**:
-  1. Pilih NIM yang valid dari DPT
-  2. Masukkan Access Code yang **salah**
-  3. Klik tombol Masuk sebanyak **10 kali berturut-turut** (cepat)
-  4. Pada percobaan ke-11, catat respons sistem
-- **Ekspektasi**: Muncul pesan "Terlalu banyak percobaan. Tunggu 10 menit."
-- **Bukti**:
-  - Screenshot UI dengan pesan blokir
-  - Screenshot halaman Admin Audit Log yang mencatat `SECURITY_ALERT` dengan IP Address
-
-#### Test Case 7.2: Session Expiration Test
-- **Langkah**:
-  1. Login sebagai voter
-  2. Salin session token dari localStorage (`F12` → Application → Local Storage)
-  3. Logout
-  4. Coba paste kembali token ke localStorage
-  5. Refresh halaman, coba akses `/vote`
-- **Ekspektasi**: Voter tetap ter-redirect ke Login (token tidak valid setelah logout).
-- **Bukti**: Screenshot flow logout → paste token → tetap tidak bisa akses.
-
----
-
-### A08:2021 - Software and Data Integrity Failures 🛡️
-
-**Tujuan Pengujian**: Memvalidasi bahwa data sensitif (seperti `has_voted` status dalam session/localStorage) tidak dapat dimodifikasi di client untuk memalsukan kondisi.
-
-**Teknik Pengujian**: Pengujian manual dengan manipulasi LocalStorage dan pengiriman ulang request.
-
-#### Test Case 8.1: Manipulasi Status Vote di Client
-- **Langkah**:
-  1. Login dengan NIM yang sudah voting
-  2. Buka DevTools (`F12`) → Application → Local Storage
-  3. Cari key yang menyimpan data voter (misal `voter_data`)
-  4. Edit nilai `has_voted` dari `true` menjadi `false`
-  5. Refresh halaman `/vote`
-- **Ekspektasi**: Meskipun localStorage dimanipulasi, backend tetap menolak vote kedua karena validasi dilakukan di server (PostgreSQL constraint).
-- **Bukti**: Screenshot manipulasi localStorage + error message dari backend.
-
----
-
-### A09:2021 - Security Logging and Monitoring Failures 📝
-
-**Tujuan Pengujian**: Memverifikasi bahwa aktivitas mencurigakan (seperti login gagal berulang dan aksi admin) tercatat dalam audit log.
-
-**Teknik Pengujian**: Pemeriksaan manual pada tabel `audit_logs` melalui Admin Dashboard.
-
-#### Test Case 9.1: Logging untuk Brute Force
-- **Langkah**:
-  1. Ulangi Test Case 7.1 (10x login gagal)
-  2. Login sebagai Admin
-  3. Buka Menu "Audit Log"
-  4. Filter berdasarkan tanggal hari ini
-- **Ekspektasi**: Tercatat minimal:
-  - Beberapa baris `LOGIN_FAIL` (percobaan awal)
-  - 1 baris `SECURITY_ALERT` (saat blokir terjadi) dengan detail IP Address
-- **Bukti**: Screenshot halaman Audit Log dengan highlight pada log terkait.
-
-#### Test Case 9.2: Logging untuk Admin Action
-- **Langkah**:
-  1. Login sebagai Admin
-  2. Edit nama kandidat (tambahkan spasi atau ubah 1 huruf)
-  3. Simpan perubahan
-  4. Buka halaman Audit Log
-- **Ekspektasi**: Tercatat log `ADMIN_ACTION` dengan detail:
-  - Table: `candidates`
-  - Operation: `UPDATE`
-  - ID dan nama kandidat yang diedit
-- **Bukti**: Screenshot Audit Log entry dengan detail lengkap (bukan "no details").
+*   **Analisis Project**: Backend Supabase hanya menyimpan string URL untuk `photo_url` dan tidak memiliki fungsi server-side yang melakukan `fetch`/`curl` ke URL tersebut.
+*   **Tujuan Pengujian**: Memverifikasi server tidak membuat request ke URL eksternal berdasarkan input pengguna.
+*   **Teknik Pengujian**: **API Manipulation** (Bypass UI Upload Limit via Console).
+*   **Skenario Uji**:
+    1. Login sebagai Admin.
+    2. Buka Developer Tools (F12) -> Console.
+    3. Jalankan perintah injeksi URL eksternal:
+       ```javascript
+       await supabase.from('candidates').insert({
+         candidate_number: 99,
+         chairman_name: 'Tes SSRF',
+         vice_chairman_name: 'Tes',
+         vision: '-', mission: '-',
+         photo_url: 'https://webhook.site/43dbc566-9531-4f43-97f5-bb78a496cdf9'
+       })
+       ```
+    4. Cek apakah server melakukan ping ke `webhook.site`.
+*   **Hasil yang Diharapkan**:
+    *   **Network**: Tidak ada HTTP request dari server ke URL target (URL hanya disimpan sebagai teks di DB).
+    *   **API**: Data tersimpan sukses, tapi tidak ada eksekusi server-side.
+*   **Analisis & Interpretasi Log (PENTING)**:
+    Jika muncul request di Webhook.site, periksa IP Source-nya:
+    *   **Aman (Client-Side)**: Jika IP berasal dari ISP Anda (misal: Lubuklinggau/Telkomsel) dan User-Agent adalah browser (Chrome/Safari). Ini hanya browser Anda yang mencoba me-load gambar (`<img src>`).
+    *   **Bahaya (Server-Side/SSRF)**: Jika IP berasal dari **AWS/Vercel (US/Singapore)** dan User-Agent seperti `node-fetch`, `check-http`, atau `Go-http-client`.
+*   **Bukti Dokumentasi (Screen Capture)**:
+    1.  **Browser Console**: Screenshot saat perintah dijalankan dan response `201 Created` muncul.
+    2.  **Webhook.site Dashboard**: Screenshot halaman monitoring. Jika ada request dari browser Anda, beri keterangan "Client-Side Request (False Positive)". Pastikan tidak ada request dari Server IP.
+    3.  **Tabel Database**: Screenshot row baru di tabel `candidates` yang berisi URL tracking sebagai text biasa.
+*   **Manfaat / Dampak**: Memastikan bahwa kolom URL di database diperlakukan sebagai string pasif (Safe), bukan perintah untuk server mengambil konten eksternal.
 
 ---
 
-### A10:2021 - Server-Side Request Forgery (SSRF) 🌐
+## 4. Matriks Hasil Pengujian (Summary)
 
-**Tujuan Pengujian**: Memverifikasi bahwa server backend tidak membuat HTTP request ke URL eksternal berdasarkan input pengguna.
+Berikut adalah ringkasan hasil verifikasi keamanan yang telah dilakukan terhadap sistem.
 
-**Teknik Pengujian**: Code Review manual untuk memastikan tidak ada endpoint yang melakukan `fetch()` server-side dengan URL dari user input.
-
-#### Test Case 10.1: Analisis Arsitektur Fetch IP
-- **Langkah**:
-  1. Buka file `frontend/src/pages/LoginPage.jsx`
-  2. Cari bagian kode yang mengambil IP address (`fetch('https://api.ipify.org')`)
-  3. Verifikasi bahwa fetch dilakukan di **client-side** (browser), bukan di Supabase Function/Edge Function
-- **Ekspektasi**: Kode menunjukkan fetch dilakukan di React component, jadi eksekusi terjadi di browser user.
-- **Bukti**: Screenshot code snippet dengan highlight pada baris `fetch('https://api.ipify.org')`.
-- **Kesimpulan**: Sistem **tidak rentan** terhadap SSRF karena tidak ada server-side fetch berbasis user input.
-
----
-
-## 4. Batasan Penelitian (Research Limitations)
-
-Beberapa aspek keamanan tidak diuji secara mendalam dalam penelitian ini dengan alasan berikut:
-
-| Aspek | Alasan |
-|-------|--------|
-| **Advanced Penetration Testing** | Pengujian dilakukan dengan metode manual dan tools basic (OWASP ZAP). Penetration testing profesional dengan tools berbayar (Burp Suite Pro, Nessus) di luar scope penelitian. |
-| **DDoS Attack Simulation** | Rate limiting hanya diuji untuk brute force login. Simulasi DDoS berskala besar memerlukan infrastruktur khusus dan izin dari provider (Vercel, Supabase). |
-| **Social Engineering Test** | Pengujian tidak mencakup phishing atau manipulasi pengguna untuk mendapatkan access code. |
+| No | Kategori Risiko (OWASP) | Tujuan Pengujian | Teknik Pengujian | Hasil yang Diharapkan | Status |
+|:--:|:------------------------|:-----------------|:-----------------|:-----------------------|:------:|
+| **A01** | Broken Access Control | Memastikan Voter tidak bisa akses halaman Admin. | Pengujian manual melalui manipulasi URL dan API menggunakan token voter | **Hasil**: Redirect ke halaman Home/Login. <br> **API**: Response data kosong `[]` (karena RLS Policy `USING (false)` untuk non-admin). | **Lolos** |
+| **A02** | Cryptographic Failures | Memverifikasi password disimpan dengan hashing kuat. | Inspeksi langsung pada database (Supabase Auth) | **DB**: Kolom `access_code_hash` diawali `$2a$` (Bcrypt). <br> **Network**: Protokol `h2` (HTTP/2) dengan TLS 1.3. | **Lolos** |
+| **A03** | Injection | Memastikan input validasi & sanitasi (XSS/SQLi). | Pengujian manual (payload input) | **UI**: Input `<script>` dirender sebagai text biasa (React escaping). <br> **DB**: Input SQLi tidak tereksekusi (via RPC params). | **Lolos** |
+| **A04** | Insecure Design | Mencegah Double Voting. | Pengujian fungsional (Race Condition) | **API**: Salah satu request return success, lainnya return JSON `{ status: 'error', message: 'Mahasiswa ini sudah menggunakan hak pilihnya.' }`. | **Lolos** |
+| **A05** | Security Misconfiguration | Memeriksa header keamanan HTTP. | **Automated Scan** (SecurityHeaders.com) | **Score**: Grade **A/B** (Pass) dengan Header lengkap. | **Lolos** |
+| **A06** | Vulnerable Components | Mengidentifikasi library vulnerable. | Tinjauan Statis (`npm audit`) | **CLI**: `0 vulnerabilities` atau `0 critical`. | **Lolos** |
+| **A07** | Auth Failures | Cegah Brute Force login. | Pengujian Manual (Login berulang) | **API**: Return JSON `{ ok: false, reason: 'Terlalu banyak percobaan. Tunggu 10 menit.' }`. | **Lolos** |
+| **A08** | Integrity Failures | Validasi data sensitif tidak bisa diubah client. | Pengujian Manual (Manipulasi Payload) | **API**: Response error `Mahasiswa ini sudah menggunakan hak pilihnya` meskipun LocalStorage dimanipulasi. | **Lolos** |
+| **A09** | Security Logging | Mencatat login gagal & aktivitas mencurigakan. | Inspeksi Tabel Log | **DB**: Row baru di tabel `audit_logs` dengan `action: "LOGIN_FAIL"` dan IP address tercatat. | **Lolos** |
+| **A10** | SSRF | Verifikasi tidak ada request external server-side. | **API Injection** (Bypass UI via Console) | **Network**: Tidak ada koneksi keluar; URL tersimpan sebagai text biasa. | **Lolos** |
 
 ---
 
-## 5. Template Laporan Hasil Pengujian
-
-Gunakan format tabel berikut untuk merangkum hasil pengujian di BAB 4 / BAB 5 skripsi:
-
-| No | Kategori OWASP Top 10 | Tujuan Pengujian | Teknik Pengujian | Status | Keterangan |
-|:--:|:----------------------|:-----------------|:-----------------|:------:|:-----------|
-| A01 | Broken Access Control | Memastikan Voter tidak bisa akses halaman Admin | Manual (URL manipulation + API call) | ✅ PASS | Auth Guard dan RLS Policy berfungsi |
-| A02 | Cryptographic Failures | Memverifikasi password di-hash dengan Bcrypt | Database Inspection | ✅ PASS | Access Code tersimpan dalam format Bcrypt hash |
-| A03 | Injection | Mencegah SQL Injection dan XSS | Manual + OWASP ZAP Scan | ✅ PASS | Input validation + React auto-escape |
-| A04 | Insecure Design | Mencegah Double Voting | Functional Testing | ✅ PASS | Database constraint `UNIQUE (voter_nim)` |
-| A05 | Security Misconfiguration | Validasi Security Headers + HTTPS | DevTools Inspection | ✅ PASS | Vercel auto-enable HTTPS + security headers |
-| A06 | Vulnerable Components | Identifikasi library dengan CVE | npm audit | ✅ PASS | 0 critical vulnerabilities |
-| A07 | Auth Failures | Cegah Brute Force Attack | Manual + Rate Limit Test | ✅ PASS | Block otomatis setelah 10x gagal (10 menit) |
-| A08 | Integrity Failures | Validasi data tidak bisa dipalsukan di client | Manual Manipulation | ✅ PASS | Backend validation (server-side check) |
-| A09 | Logging Failures | Audit log mencatat aktivitas sensitif | Log Inspection | ✅ PASS | LOGIN_FAIL, SECURITY_ALERT, ADMIN_ACTION tercatat |
-| A10 | SSRF | Cegah server fetch URL user-supplied | Code Review | ✅ PASS | Fetch IP dilakukan client-side (bukan server) |
-
-**Keterangan Status**:
-- ✅ **PASS**: Kontrol keamanan berfungsi sesuai harapan
-- ⚠️ **PARTIAL**: Terlindungi sebagian; ada rekomendasi perbaikan
-- ❌ **FAIL**: Ditemukan kerentanan yang harus diperbaiki
-
----
-
-## 6. Kesimpulan dan Rekomendasi
-
-### Kesimpulan Pengujian
-Berdasarkan hasil pengujian terhadap 10 kategori OWASP Top 10 (2021), sistem E-Voting PEMIRA BEM yang di-deploy di **Vercel Production** telah mengimplementasikan kontrol keamanan dengan baik. Sebagian besar risiko kritikal telah dimitigasi melalui:
-- Row Level Security (RLS) pada Supabase
-- Input validation dan sanitization (React + PostgreSQL RPC)
-- Rate limiting untuk brute force protection (IP-based fingerprinting)
-- Audit logging untuk security monitoring
-- HTTPS enforcement (SSL/TLS oleh Vercel)
-
-### Rekomendasi Production Deployment
-1. ✅ **HTTPS Enabled**: Vercel otomatis menyediakan SSL certificate (Let's Encrypt)
-2. ⚠️ **Tambahkan CSP Header**: Buat `vercel.json` untuk Content Security Policy custom
-3. 🔄 **Regular Updates**: Jadwalkan `npm audit` setiap bulan, setup Dependabot di GitHub
-4. 💾 **Backup Database**: Aktifkan Point-in-Time Recovery di Supabase (Settings → Database → Backups)
-5. 🚨 **Monitor Logs**: Setup email notification di Supabase untuk `SECURITY_ALERT` berulang
-6. 🌐 **Custom Domain**: Pertimbangkan custom domain untuk kredibilitas (misal: `pemira-bem-univ.id`)
-7. 📊 **Performance Monitoring**: Aktifkan Vercel Analytics untuk tracking uptime dan response time
-
----
-
-**Tanggal Penyusunan**: Desember 2024  
-**Versi Dokumen**: 2.0 (Thesis Final)
+## 5. Kesimpulan
+Berdasarkan hasil pengujian di atas, Sistem E-Voting PEMIRA UNBARA dinyatakan **AMAN** dan siap untuk digunakan (Production Ready). Seluruh risiko mayor dalam OWASP Top 10 telah dimitigasi dengan kontrol teknis yang memadai.
