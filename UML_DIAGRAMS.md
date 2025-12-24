@@ -10,7 +10,6 @@ Menggambarkan interaksi antara Aktor (Pemilih & Admin) dengan fitur-fitur sistem
 ```mermaid
 graph LR
     subgraph System [Sistem E-Voting BEM]
-        direction TB
         UC1(Login - NIM dan Kode Akses)
         UC2(Melihat Daftar Kandidat)
         UC3(Melakukan Voting - Coblos)
@@ -21,6 +20,7 @@ graph LR
         UC8(Monitoring Hasil dan Log Audit)
         UC9(Buka Tutup Voting)
     end
+    style System fill:none,stroke:black,stroke-width:2px
 
     Voter[👤 Pemilih - Voter]
     Admin[👤 Administrator]
