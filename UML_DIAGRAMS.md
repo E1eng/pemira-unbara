@@ -8,20 +8,22 @@ Dokumen ini berisi diagram perancangan sistem menggunakan notasi UML (Unified Mo
 Menggambarkan interaksi antara Aktor (Pemilih & Admin) dengan fitur-fitur sistem.
 
 ```mermaid
-usecaseDiagram
-    actor "Pemilih (Voter)" as Voter
-    actor "Administrator" as Admin
+graph LR
+    subgraph System [Sistem E-Voting BEM]
+        direction TB
+        UC1(Login - NIM dan Kode Akses)
+        UC2(Melihat Daftar Kandidat)
+        UC3(Melakukan Voting - Coblos)
+        UC4(Melihat Hasil Sementara - Real Count)
+        UC5(Login Admin)
+        UC6(Kelola Data Kandidat)
+        UC7(Kelola Data DPT - Import CSV)
+        UC8(Monitoring Hasil dan Log Audit)
+        UC9(Buka Tutup Voting)
+    end
 
-    usecase "Login (NIM & Access Code)" as UC1
-    usecase "Melihat Daftar Kandidat" as UC2
-    usecase "Melakukan Voting (Coblos)" as UC3
-    usecase "Melihat Hasil Sementara (Real Count)" as UC4
-    
-    usecase "Login Admin" as UC5
-    usecase "Kelola Data Kandidat" as UC6
-    usecase "Kelola Data DPT (Import CSV)" as UC7
-    usecase "Monitoring Hasil & Log Audit" as UC8
-    usecase "Buka/Tutup Voting" as UC9
+    Voter[👤 Pemilih - Voter]
+    Admin[👤 Administrator]
 
     Voter --> UC1
     Voter --> UC2
@@ -34,11 +36,12 @@ usecaseDiagram
     Admin --> UC8
     Admin --> UC9
     
-    UC3 .> UC1 : include
-    UC4 .> UC1 : include (optional)
-    UC6 .> UC5 : include
-    UC7 .> UC5 : include
-    UC8 .> UC5 : include
+    %% Includes (Dependencies)
+    UC3 -.->|include| UC1
+    UC4 -.->|include| UC1
+    UC6 -.->|include| UC5
+    UC7 -.->|include| UC5
+    UC8 -.->|include| UC5
 ```
 
 ---
@@ -95,7 +98,6 @@ sequenceDiagram
     
     Supabase->>RPC: Execute Function
     
-    rect rgb(240, 248, 255)
         Note over RPC: Server-Side Validation Layer
         
         RPC->>Tables: SELECT * FROM election_settings WHERE id=1
@@ -128,7 +130,7 @@ sequenceDiagram
                 end
             end
         end
-    end
+
 ```
 
 ---
