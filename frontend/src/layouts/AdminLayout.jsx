@@ -101,7 +101,7 @@ export default function AdminLayout() {
           <div className="flex items-center gap-3 px-2">
             <img src={logo} alt="Logo" className="h-10 w-auto object-contain bg-white/10 rounded-lg p-1" />
             <div className="min-w-0">
-              <div className="text-sm font-semibold text-white">PEMIRA BEM</div>
+              <div className="text-sm font-semibold text-white">PEMIRA UNBARA</div>
               <div className="text-xs text-zinc-300">Panel Panitia Pemilihan</div>
             </div>
           </div>

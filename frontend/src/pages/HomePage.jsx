@@ -102,7 +102,7 @@ export default function HomePage() {
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
                   </span>
-                  PEMIRA BEM 2025
+                  PEMIRA UNABARA 2026
                 </motion.div>
 
                 <h1 className="text-4xl sm:text-6xl font-bold tracking-tight text-white mb-6 leading-[1.1]">
@@ -113,7 +113,7 @@ export default function HomePage() {
                 </h1>
 
                 <p className="text-lg text-zinc-400 leading-relaxed max-w-lg">
-                  Platform e-voting modern untuk pemilihan Badan Eksekutif Mahasiswa yang transparan, jujur, dan efisien.
+                  Platform e-voting modern untuk pemilihan umu raya yang transparan, jujur, dan efisien.
                 </p>
               </div>
 

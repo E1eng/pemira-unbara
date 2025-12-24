@@ -38,7 +38,7 @@ export default function Layout({ children }) {
             <Link to="/" className="flex items-center gap-3 group">
               <img src={logo} alt="Logo BEM" className="h-10 w-auto object-contain transition-transform group-hover:scale-105" />
               <div>
-                <div className="text-base font-bold leading-none text-gov-blue tracking-tight group-hover:text-gov-accent transition-colors">BEM UNBARA</div>
+                <div className="text-base font-bold leading-none text-gov-blue tracking-tight group-hover:text-gov-accent transition-colors">PEMIRA UNBARA</div>
                 <div className="text-[10px] font-medium text-zinc-400 leading-none mt-1">Sistem Pemilihan Digital</div>
               </div>
             </Link>

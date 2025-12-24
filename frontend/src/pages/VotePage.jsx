@@ -174,8 +174,8 @@ export default function VotePage() {
   }
 
   const statusBadge = useMemo(() => {
-    if (isVotingOpen === false) return { label: 'Tutup', color: 'bg-red-50 text-red-600 border-red-100', icon: X }
-    if (isVotingOpen === true) return { label: 'Buka', color: 'bg-emerald-50 text-emerald-600 border-emerald-100', icon: CheckCircle }
+    if (isVotingOpen === false) return { label: 'Ditutup', color: 'bg-red-50 text-red-600 border-red-100', icon: X }
+    if (isVotingOpen === true) return { label: 'Dibuka', color: 'bg-emerald-50 text-emerald-600 border-emerald-100', icon: CheckCircle }
     return { label: '...', color: 'bg-zinc-50 text-zinc-500 border-zinc-100', icon: RefreshCw }
   }, [isVotingOpen])
 

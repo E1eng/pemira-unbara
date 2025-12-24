@@ -96,7 +96,7 @@ export default function LoginPage() {
                   Login Pemilih
                 </h1>
                 <p className="text-zinc-700 text-sm">
-                  Masukkan NIM dan Kode Akses untuk mulai memilih di PEMIRA BEM.
+                  Masukkan NIM dan Kode Akses untuk mulai memilih di PEMIRA UNBARA.
                 </p>
               </div>
 

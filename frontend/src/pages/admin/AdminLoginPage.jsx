@@ -66,7 +66,7 @@ export default function AdminLoginPage() {
             <div className="flex items-center gap-3">
               <img src={logo} alt="Logo" className="h-11 w-auto object-contain" />
               <div>
-                <div className="text-lg font-bold tracking-tight">PEMIRA BEM</div>
+                <div className="text-lg font-bold tracking-tight">PEMIRA UNBARA</div>
                 <div className="text-sm text-zinc-600">Login Panitia Pemilihan</div>
               </div>
             </div>
@@ -120,7 +120,7 @@ export default function AdminLoginPage() {
             </form>
           </div>
 
-          <p className="mt-4 text-center text-xs text-zinc-500">© 2025 PEMIRA BEM - Secured by Supabase</p>
+          <p className="mt-4 text-center text-xs text-zinc-500">© 2025 PEMIRA UNBARA - Secured by Supabase</p>
         </div>
       </div>
     </div>
