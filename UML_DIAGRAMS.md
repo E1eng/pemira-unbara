@@ -42,6 +42,7 @@ graph LR
     UC6 -.->|include| UC5
     UC7 -.->|include| UC5
     UC8 -.->|include| UC5
+    UC9 -.->|include| UC5
 ```
 
 ---
