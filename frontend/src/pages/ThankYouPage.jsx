@@ -131,7 +131,7 @@ export default function ThankYouPage() {
                   Hasil Akhir
                 </button>
                 <button
-                  onClick={() => navigate('/live')}
+                  onClick={() => navigate('/results')}
                   className="flex-1 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-medium text-zinc-700 hover:bg-zinc-50"
                 >
                   Live Count

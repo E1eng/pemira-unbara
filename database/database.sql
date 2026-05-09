@@ -349,7 +349,26 @@ RETURNS TABLE (
   photo_url text,
   total_votes bigint
 ) AS $$
+DECLARE
+  v_show_live boolean;
+  v_is_admin boolean;
 BEGIN
+  -- Check if caller is admin (authenticated users in admin_users table)
+  v_is_admin := EXISTS (SELECT 1 FROM admin_users WHERE user_id = auth.uid());
+
+  -- If not admin, enforce show_live_result setting
+  IF NOT v_is_admin THEN
+    SELECT es.show_live_result INTO v_show_live FROM election_settings es WHERE es.id = 1;
+    IF v_show_live IS DISTINCT FROM true THEN
+      -- Return candidates with zero votes when live results are hidden
+      RETURN QUERY
+      SELECT c.id, c.candidate_number, c.chairman_name, c.vice_chairman_name, c.photo_url, 0::bigint AS total_votes
+      FROM candidates c
+      ORDER BY c.candidate_number;
+      RETURN;
+    END IF;
+  END IF;
+
   RETURN QUERY
   SELECT 
     c.id,
@@ -405,6 +424,7 @@ DECLARE
   v_now timestamptz := timezone('utc'::text, now());
   v_window interval := interval '10 minutes';
   v_max_fail int := 10;
+  v_voter_found boolean;
 BEGIN
   -- Client fingerprint
   v_ip := COALESCE(p_client_info->>'ip', 'unknown');
@@ -420,9 +440,10 @@ BEGIN
 
   -- 2. Validate NIM
   SELECT * INTO v_voter FROM voters WHERE nim = p_nim;
+  v_voter_found := FOUND;
   
   -- If NIM not found OR Token mismatch -> Increment Fail Count & Block if needed
-  IF NOT FOUND OR v_voter.access_code_hash != crypt(p_access_code_plain, v_voter.access_code_hash) THEN
+  IF NOT v_voter_found OR v_voter.access_code_hash != crypt(p_access_code_plain, v_voter.access_code_hash) THEN
     
     INSERT INTO vote_rate_limits (client_key, fail_count, first_fail_at, updated_at, blocked_until)
     VALUES (v_client_key, 1, v_now, v_now, NULL)
@@ -438,7 +459,7 @@ BEGIN
     RETURNING * INTO v_rate;
 
     -- Log specific error
-    IF NOT FOUND THEN
+    IF NOT v_voter_found THEN
       INSERT INTO audit_logs (action, details) VALUES ('LOGIN_FAIL', jsonb_build_object('reason', 'NIM Not Found', 'nim', p_nim, 'ip', v_ip));
       RETURN jsonb_build_object('ok', false, 'reason', 'NIM tidak ditemukan.');
     ELSE

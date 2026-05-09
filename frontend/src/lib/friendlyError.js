@@ -7,7 +7,7 @@ export function friendlyError(err, fallback) {
 
   const code = err.code != null ? String(err.code) : ''
 
-  if (lower.includes('jwt expired') || lower.includes('session') && lower.includes('expired')) {
+  if (lower.includes('jwt expired') || (lower.includes('session') && lower.includes('expired'))) {
     return 'Sesi login berakhir. Silakan login ulang.'
   }
 

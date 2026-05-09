@@ -43,6 +43,7 @@ export default function AdminLayout() {
   const location = useLocation()
   const [checking, setChecking] = useState(true)
   const [session, setSession] = useState(null)
+  const [isAdmin, setIsAdmin] = useState(false)
 
   // Trigger NProgress on admin route change
   useEffect(() => {
@@ -60,6 +61,19 @@ export default function AdminLayout() {
     const init = async () => {
       const { data } = await supabase.auth.getSession()
       if (!mounted) return
+
+      if (data.session) {
+        // Verify user is registered in admin_users table
+        const { data: adminData } = await supabase
+          .from('admin_users')
+          .select('user_id')
+          .eq('user_id', data.session.user.id)
+          .maybeSingle()
+
+        if (!mounted) return
+        setIsAdmin(!!adminData)
+      }
+
       setSession(data.session)
       setChecking(false)
     }
@@ -68,6 +82,7 @@ export default function AdminLayout() {
 
     const { data: sub } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession)
+      if (!nextSession) setIsAdmin(false)
     })
 
     return () => {
@@ -88,7 +103,7 @@ export default function AdminLayout() {
     )
   }
 
-  if (!session) {
+  if (!session || !isAdmin) {
     return <Navigate to="/admin/login" replace />
   }
 
