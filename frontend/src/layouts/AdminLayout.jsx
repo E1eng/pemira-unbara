@@ -103,8 +103,30 @@ export default function AdminLayout() {
     )
   }
 
-  if (!session || !isAdmin) {
+  if (!session) {
     return <Navigate to="/admin/login" replace />
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="min-h-dvh bg-gov-bg text-gov-blue">
+        <div className="mx-auto flex min-h-dvh max-w-5xl items-center justify-center px-4">
+          <div className="rounded-2xl border border-red-200 bg-white px-8 py-6 shadow-sm text-center max-w-md">
+            <div className="text-lg font-bold text-red-600 mb-2">Akses Ditolak</div>
+            <div className="text-sm text-zinc-600 mb-4">
+              Akun <span className="font-mono font-semibold">{session.user.email}</span> tidak terdaftar sebagai admin.
+              Pastikan user sudah ditambahkan ke tabel <code className="bg-zinc-100 px-1 rounded">admin_users</code>.
+            </div>
+            <button
+              onClick={async () => { await supabase.auth.signOut(); navigate('/admin/login', { replace: true }) }}
+              className="rounded-xl bg-zinc-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-zinc-800 transition-colors"
+            >
+              Logout
+            </button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
