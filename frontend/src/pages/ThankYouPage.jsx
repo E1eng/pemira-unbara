@@ -54,8 +54,8 @@ export default function ThankYouPage() {
     <Layout>
       <div className="flex min-h-[70vh] items-center justify-center py-4">
         <div className="w-full max-w-md">
-          {/* Success Card - Mobile Optimized */}
-          <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-lg sm:p-8">
+          {/* Success Card */}
+          <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8">
             {/* Success Icon and Title */}
             <div className="text-center">
               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 sm:h-20 sm:w-20">
@@ -101,7 +101,7 @@ export default function ThankYouPage() {
             <button
               type="button"
               onClick={goHome}
-              className="mt-6 inline-flex h-12 w-full items-center justify-center rounded-xl bg-gov-accent px-4 text-sm font-semibold text-white shadow-sm transition-all hover:bg-gov-accent/95 focus:outline-none focus:ring-4 focus:ring-gov-accent/20"
+              className="mt-6 inline-flex h-12 w-full items-center justify-center rounded-xl bg-gov-accent px-4 text-sm font-semibold text-white shadow-md shadow-gov-accent/20 transition-all hover:brightness-110 focus:outline-none focus:ring-4 focus:ring-gov-accent/20 active:scale-[0.98]"
             >
               <Home className="mr-2 h-4 w-4" />
               Kembali ke Beranda
@@ -116,29 +116,14 @@ export default function ThankYouPage() {
             </div>
           </div>
 
-          {/* Quick Links - Mobile Optimized */}
-          <div className="mt-4 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-            <div className="text-center">
-              <div className="text-sm font-medium text-zinc-900">Ingin melihat hasil?</div>
-              <div className="mt-2 text-xs text-zinc-600">
-                Cek halaman hasil untuk melihat rekapitulasi suara
-              </div>
-              <div className="mt-3 flex gap-2">
-                <button
-                  onClick={() => navigate('/results')}
-                  className="flex-1 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-medium text-zinc-700 hover:bg-zinc-50"
-                >
-                  Hasil Akhir
-                </button>
-                <button
-                  onClick={() => navigate('/results')}
-                  className="flex-1 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-medium text-zinc-700 hover:bg-zinc-50"
-                >
-                  Live Count
-                </button>
-              </div>
-            </div>
-          </div>
+          {/* Quick Link */}
+          <button
+            onClick={() => navigate('/results')}
+            className="mt-4 w-full rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm text-center transition-all hover:border-zinc-300 hover:shadow-md active:scale-[0.99] group"
+          >
+            <div className="text-sm font-semibold text-zinc-900 group-hover:text-gov-accent transition-colors">Lihat Hasil Real Count →</div>
+            <div className="mt-1 text-xs text-zinc-500">Cek rekapitulasi suara secara realtime</div>
+          </button>
         </div>
       </div>
     </Layout>

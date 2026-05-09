@@ -62,7 +62,7 @@ export default function AdminLoginPage() {
     <div className="min-h-dvh bg-gov-bg text-gov-blue">
       <div className="mx-auto flex min-h-dvh max-w-5xl items-center justify-center px-4">
         <div className="w-full max-w-md">
-          <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-lg sm:p-8">
+          <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8">
             <div className="flex items-center gap-3">
               <img src={logo} alt="Logo" className="h-11 w-auto object-contain" />
               <div>
@@ -113,14 +113,14 @@ export default function AdminLoginPage() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-gov-accent px-4 text-sm font-semibold text-white shadow-sm hover:bg-gov-accent/95 focus:outline-none focus:ring-4 focus:ring-gov-accent/20 disabled:opacity-50"
+                className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-gov-accent px-4 text-sm font-semibold text-white shadow-md shadow-gov-accent/20 hover:brightness-110 focus:outline-none focus:ring-4 focus:ring-gov-accent/20 active:scale-[0.98] transition-all disabled:opacity-50"
               >
                 {submitting ? 'Memproses...' : 'Masuk'}
               </button>
             </form>
           </div>
 
-          <p className="mt-4 text-center text-xs text-zinc-500">© 2025 PEMIRA UNBARA - Secured by Supabase</p>
+          <p className="mt-4 text-center text-xs text-zinc-500">© 2026 PEMIRA UNBARA - Secured by Supabase</p>
         </div>
       </div>
     </div>

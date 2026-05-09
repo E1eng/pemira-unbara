@@ -347,10 +347,10 @@ export default function AdminDashboardPage() {
                 openConfirm('is_voting_open', next, 'Buka/Tutup Pendaftaran Suara')
               }}
               className={[
-                'mt-3 inline-flex h-11 w-full items-center justify-center rounded-xl px-4 text-sm font-semibold transition-colors',
+                'mt-3 inline-flex h-11 w-full items-center justify-center rounded-xl px-4 text-sm font-semibold transition-all active:scale-[0.98]',
                 isVotingOpen
-                  ? 'bg-emerald-600 text-white hover:bg-emerald-600/95'
-                  : 'bg-zinc-900 text-white hover:bg-zinc-900/95',
+                  ? 'bg-emerald-600 text-white hover:brightness-110'
+                  : 'bg-zinc-900 text-white hover:bg-zinc-800',
                 (settingsLoading || updatingField === 'is_voting_open') ? 'opacity-50' : '',
               ].join(' ')}
             >
@@ -369,9 +369,9 @@ export default function AdminDashboardPage() {
                 openConfirm('show_live_result', next, 'Publikasikan Hasil (Rekap Publik)')
               }}
               className={[
-                'mt-3 inline-flex h-11 w-full items-center justify-center rounded-xl px-4 text-sm font-semibold transition-colors',
+                'mt-3 inline-flex h-11 w-full items-center justify-center rounded-xl px-4 text-sm font-semibold transition-all active:scale-[0.98]',
                 showLiveResult
-                  ? 'bg-gov-accent text-white hover:bg-gov-accent/95'
+                  ? 'bg-gov-accent text-white hover:brightness-110'
                   : 'bg-white text-zinc-700 border border-zinc-200 hover:bg-zinc-100',
                 (settingsLoading || updatingField === 'show_live_result') ? 'opacity-50' : '',
               ].join(' ')}

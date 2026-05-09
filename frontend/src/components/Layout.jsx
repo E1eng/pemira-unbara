@@ -103,7 +103,7 @@ export default function Layout({ children }) {
         <div className="mx-auto w-full max-w-5xl px-6 py-8">
           <div className="flex items-center justify-between">
             <div className="text-xs text-zinc-400 font-medium">
-              © 2025 Panitia Pemilihan Umum Raya (PEMIRA)
+              © 2026 Panitia Pemilihan Umum Raya (PEMIRA)
             </div>
             <div className="flex gap-4">
               {/* Footer links if needed */}

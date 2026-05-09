@@ -18,7 +18,7 @@ function TicketCard({ candidate, onDetail, onSelect, isVotingOpen, disabled }) {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="group relative bg-white rounded-3xl border border-zinc-200 shadow-sm overflow-hidden hover:shadow-lg transition-all hover:-translate-y-1"
+      className="group relative bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden hover:shadow-md transition-all duration-300 hover:-translate-y-0.5"
     >
       {/* Top: Photo 1:1 */}
       <div className="relative aspect-square w-full bg-zinc-100 overflow-hidden border-b border-zinc-100">
@@ -55,14 +55,14 @@ function TicketCard({ candidate, onDetail, onSelect, isVotingOpen, disabled }) {
         <div className="mt-auto grid grid-cols-2 gap-3">
           <button
             onClick={() => onDetail(candidate)}
-            className="w-full py-2.5 rounded-xl bg-zinc-50 text-zinc-600 text-xs font-bold border border-zinc-100 hover:bg-zinc-100 transition-colors"
+            className="w-full py-2.5 rounded-xl bg-zinc-50 text-zinc-600 text-xs font-bold border border-zinc-100 hover:bg-zinc-100 transition-all active:scale-[0.97]"
           >
             Detail
           </button>
           <button
             onClick={() => onSelect(candidate)}
             disabled={disabled}
-            className="w-full py-2.5 rounded-xl bg-gov-accent text-white text-xs font-bold shadow-lg shadow-gov-accent/20 hover:bg-gov-accent/90 active:scale-95 transition-all disabled:opacity-50 disabled:grayscale"
+            className="w-full py-2.5 rounded-xl bg-gov-accent text-white text-xs font-bold shadow-md shadow-gov-accent/20 hover:brightness-110 active:scale-[0.97] transition-all disabled:opacity-50 disabled:grayscale"
           >
             Pilih
           </button>
@@ -74,7 +74,7 @@ function TicketCard({ candidate, onDetail, onSelect, isVotingOpen, disabled }) {
 
 function VoteSkeleton() {
   return (
-    <div className="h-40 rounded-3xl bg-white border border-zinc-200 animate-pulse" />
+    <div className="h-40 rounded-2xl bg-white border border-zinc-200 animate-pulse" />
   )
 }
 
@@ -255,11 +255,11 @@ export default function VotePage() {
         onClose={() => setDetailCandidate(null)}
         footer={
           <div className="flex gap-2 w-full">
-            <button onClick={() => setDetailCandidate(null)} className="flex-1 py-2.5 bg-zinc-100 font-semibold text-zinc-700 rounded-xl hover:bg-zinc-200">Tutup</button>
+            <button onClick={() => setDetailCandidate(null)} className="flex-1 py-2.5 bg-zinc-100 font-semibold text-zinc-700 rounded-xl hover:bg-zinc-200 transition-all active:scale-[0.97]">Tutup</button>
             <button
               onClick={() => { setSelectedCandidate(detailCandidate); setConfirmOpen(true); setDetailCandidate(null); }}
               disabled={!isVotingOpen}
-              className="flex-1 py-2.5 bg-gov-accent font-semibold text-white rounded-xl shadow-lg shadow-gov-accent/20 hover:bg-gov-accent/90 disabled:opacity-50"
+              className="flex-1 py-2.5 bg-gov-accent font-semibold text-white rounded-xl shadow-md shadow-gov-accent/20 hover:brightness-110 transition-all active:scale-[0.97] disabled:opacity-50"
             >
               Pilih
             </button>
@@ -323,12 +323,12 @@ export default function VotePage() {
             <button
               onClick={() => setConfirmOpen(false)}
               disabled={submitting}
-              className="flex-1 py-2.5 bg-zinc-100 font-semibold text-zinc-700 rounded-xl hover:bg-zinc-200"
+              className="flex-1 py-2.5 bg-zinc-100 font-semibold text-zinc-700 rounded-xl hover:bg-zinc-200 transition-all active:scale-[0.97]"
             >Batal</button>
             <button
               onClick={submitVote}
               disabled={submitting}
-              className="flex-1 py-2.5 bg-gov-accent font-semibold text-white rounded-xl shadow-lg shadow-gov-accent/20 hover:bg-gov-accent/90 disabled:opacity-70"
+              className="flex-1 py-2.5 bg-gov-accent font-semibold text-white rounded-xl shadow-md shadow-gov-accent/20 hover:brightness-110 transition-all active:scale-[0.97] disabled:opacity-70"
             >
               {submitting ? 'Memproses...' : 'Ya, Kirim Suara'}
             </button>

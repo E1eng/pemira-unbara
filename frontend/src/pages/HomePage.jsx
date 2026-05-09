@@ -76,7 +76,7 @@ export default function HomePage() {
     <Layout>
       <div className="space-y-12 pb-6">
         {/* Hero Section - Premium Dark */}
-        <div className="relative overflow-hidden rounded-[2.5rem] bg-zinc-900 border border-zinc-800 shadow-2xl">
+        <div className="relative overflow-hidden rounded-2xl bg-zinc-900 border border-zinc-800 shadow-xl">
           <div className="absolute inset-0 h-full w-full opacity-60">
             <SparklesCore
               id="tsparticlesfullpage"
@@ -136,7 +136,7 @@ export default function HomePage() {
         {/* Status Grid - Clean & Minimal */}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {/* Voting Status */}
-          <div className={`group relative rounded-3xl border p-6 transition-all duration-300 ${settings?.is_voting_open ? 'bg-white border-zinc-200 hover:border-emerald-200 hover:shadow-lg hover:shadow-emerald-500/5' : 'bg-zinc-50 border-zinc-200'}`}>
+          <div className={`group relative rounded-2xl border p-6 transition-all duration-300 ${settings?.is_voting_open ? 'bg-white border-zinc-200 hover:border-emerald-200 hover:shadow-md hover:shadow-emerald-500/5' : 'bg-zinc-50 border-zinc-200'}`}>
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-sm font-medium text-zinc-500 mb-1">Status Voting</p>
@@ -152,7 +152,7 @@ export default function HomePage() {
           </div>
 
           {/* Live Result Status */}
-          <div className={`group relative rounded-3xl border p-6 transition-all duration-300 ${settings?.show_live_result ? 'bg-white border-zinc-200 hover:border-blue-200 hover:shadow-lg hover:shadow-blue-500/5' : 'bg-zinc-50 border-zinc-200'}`}>
+          <div className={`group relative rounded-2xl border p-6 transition-all duration-300 ${settings?.show_live_result ? 'bg-white border-zinc-200 hover:border-blue-200 hover:shadow-md hover:shadow-blue-500/5' : 'bg-zinc-50 border-zinc-200'}`}>
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-sm font-medium text-zinc-500 mb-1">Live Result</p>
@@ -167,7 +167,7 @@ export default function HomePage() {
           </div>
 
           {/* Total DPT */}
-          <div className="group relative rounded-3xl border border-zinc-200 bg-white p-6 transition-all duration-300 hover:border-indigo-200 hover:shadow-lg hover:shadow-indigo-500/5 sm:col-span-2">
+          <div className="group relative rounded-2xl border border-zinc-200 bg-white p-6 transition-all duration-300 hover:border-indigo-200 hover:shadow-md hover:shadow-indigo-500/5 sm:col-span-2">
             <div className="flex items-center gap-6">
               <div className="p-4 rounded-2xl bg-indigo-50 text-indigo-600">
                 <Users className="w-8 h-8" />
@@ -188,7 +188,7 @@ export default function HomePage() {
         {/* Primary Actions */}
         <div className="grid gap-6 sm:grid-cols-2">
           <Link to={isAuthenticated ? '/vote' : '/login'} className="block group">
-            <div className="relative h-full overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-500 to-violet-600 p-8 text-white shadow-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-indigo-500/20">
+            <div className="relative h-full overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 p-8 text-white shadow-lg transition-all duration-300 hover:scale-[1.01] hover:shadow-xl hover:shadow-indigo-500/20 active:scale-[0.99]">
               <div className="relative z-10 flex flex-col h-full justify-between min-h-[180px]">
                 <div>
                   <h3 className="text-2xl font-bold mb-2">Bilik Suara</h3>
@@ -208,7 +208,7 @@ export default function HomePage() {
           </Link>
 
           <Link to="/results" className="block group">
-            <div className="relative h-full overflow-hidden rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm transition-all duration-300 hover:border-zinc-300 hover:shadow-xl hover:scale-[1.02]">
+            <div className="relative h-full overflow-hidden rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm transition-all duration-300 hover:border-zinc-300 hover:shadow-md hover:scale-[1.01] active:scale-[0.99]">
               <div className="relative z-10 flex flex-col h-full justify-between min-h-[180px]">
                 <div>
                   <h3 className="text-2xl font-bold text-zinc-900 mb-2">Hasil Real Count</h3>

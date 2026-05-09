@@ -10,7 +10,7 @@ import { BarChart3, Lock, RefreshCw, Trophy, Users, Vote } from 'lucide-react'
 
 function StatCard({ label, value, sublabel, icon: Icon, colorClass }) {
   return (
-    <div className="flex flex-col items-center justify-center p-4 rounded-2xl bg-white/60 border border-white/40 shadow-sm backdrop-blur-sm text-center">
+    <div className="flex flex-col items-center justify-center p-4 rounded-2xl bg-white border border-zinc-200 shadow-sm text-center transition-all hover:shadow-md">
       <div className={`p-2 rounded-xl ${colorClass} bg-opacity-10 mb-2`}>
         <Icon className={`w-5 h-5 ${colorClass.replace('bg-', 'text-')}`} />
       </div>
@@ -26,7 +26,7 @@ function LeaderCard({ candidate, pct, totalVotes, isVotingOpen }) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="relative w-full overflow-hidden rounded-[2rem] bg-white border border-indigo-100 shadow-xl shadow-indigo-500/10"
+      className="relative w-full overflow-hidden rounded-2xl bg-white border border-indigo-100 shadow-lg shadow-indigo-500/10"
     >
       <div className="absolute top-0 inset-x-0 h-24 bg-gradient-to-b from-indigo-50 to-transparent pointer-events-none" />
       <div className="absolute top-4 right-4 p-2 bg-white/80 backdrop-blur rounded-xl border border-indigo-50 shadow-sm z-10">
@@ -127,7 +127,7 @@ function CandidateItem({ candidate, pct, index }) {
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${pct}%` }}
-              className="h-full bg-zinc-400 rounded-full"
+              className="h-full bg-indigo-400 rounded-full"
             />
           </div>
           <span className="text-[10px] font-mono text-zinc-400 shrink-0">{candidate.total} Suara</span>
@@ -224,7 +224,7 @@ export default function ResultsPage() {
             <p className="text-zinc-500 mt-2 mb-8 leading-relaxed">
               Hasil pemilihan masih bersifat rahasia dan belum dibuka untuk publik.
             </p>
-            <button onClick={() => navigate('/')} className="w-full py-3 bg-zinc-900 text-white rounded-xl font-semibold hover:bg-zinc-800 transition-colors">
+            <button onClick={() => navigate('/')} className="w-full py-3 bg-gov-accent text-white rounded-xl font-semibold shadow-md shadow-gov-accent/20 hover:brightness-110 transition-all active:scale-[0.98]">
               Kembali ke Beranda
             </button>
           </div>
@@ -251,13 +251,13 @@ export default function ResultsPage() {
         {/* Compact Header */}
         <div className="flex items-center justify-between pb-2">
           <div>
-            <h1 className="text-xl font-bold text-zinc-900">Real Count</h1>
+            <h1 className="text-2xl font-bold text-zinc-900 tracking-tight">Real Count</h1>
             <div className="flex items-center gap-1.5 mt-1">
               <span className={`w-1.5 h-1.5 rounded-full ${refreshing ? 'bg-indigo-500 animate-pulse' : 'bg-emerald-500'}`}></span>
               <span className="text-xs font-medium text-zinc-500">Live Update</span>
             </div>
           </div>
-          <div className="bg-white/50 backdrop-blur px-3 py-1.5 rounded-lg border border-white/40 shadow-sm">
+          <div className="bg-white px-3 py-1.5 rounded-xl border border-zinc-200 shadow-sm">
             <span className="text-xs font-bold text-indigo-600">{totalVotes.toLocaleString()}</span>
             <span className="text-[10px] text-zinc-400 ml-1 font-medium">Suara Masuk</span>
           </div>

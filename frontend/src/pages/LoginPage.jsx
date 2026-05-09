@@ -156,7 +156,7 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="relative w-full overflow-hidden rounded-xl bg-gradient-to-r from-gov-accent to-indigo-600 px-3.5 py-3.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-all disabled:opacity-70 disabled:cursor-not-allowed group"
+                  className="relative w-full overflow-hidden rounded-xl bg-gradient-to-r from-gov-accent to-indigo-600 px-3.5 py-3.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed group"
                 >
                   <span className="relative z-10 flex items-center justify-center gap-2">
                     {isSubmitting ? 'Memproses...' : 'Masuk ke Bilik Suara'}
@@ -169,7 +169,7 @@ export default function LoginPage() {
 
           <div className="mt-6 text-center">
             <p className="text-xs text-zinc-500">
-              &copy; 2025 Panitia Pemilihan Raya UNBARA
+              &copy; 2026 Panitia Pemilihan Raya UNBARA
             </p>
           </div>
         </div>
