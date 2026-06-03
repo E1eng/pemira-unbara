@@ -37,7 +37,7 @@ Berikut adalah penjabaran lengkap pengujian berdasarkan 10 risiko keamanan terat
 ### A01: Broken Access Control 🚨
 **Deskripsi Risiko**: Penyerang dapat mengakses data atau fitur yang bukan haknya (misal: Voter mengakses Admin panel).
 
-*   **Analisis Project**: Sistem menggunakan Supabase Auth dengan RLS Policies. Middleware frontend (`AdminRoute.jsx`) melindungi UI, sementara RLS melindungi Data.
+*   **Analisis Project**: Sistem menggunakan Supabase Auth dengan RLS Policies. Middleware frontend (`AdminLayout.jsx`) melindungi UI dengan verifikasi sesi + keberadaan user di tabel `admin_users`, sementara RLS + grant fungsi melindungi Data.
 *   **Tujuan Pengujian**: Memastikan Voter tidak bisa akses halaman Admin.
 *   **Teknik Pengujian**: Pengujian manual melalui manipulasi URL dan API menggunakan token voter.
 *   **Skenario Uji**:
@@ -89,7 +89,7 @@ Berikut adalah penjabaran lengkap pengujian berdasarkan 10 risiko keamanan terat
 ### A04: Insecure Design 🧠
 **Deskripsi Risiko**: Cacat logika dalam desain sistem yang memungkinkan kecurangan.
 
-*   **Analisis Project**: Risiko terbesar e-voting adalah *Double Voting*. Sistem mengatasinya dengan constraint `UNIQUE` pada level database dan transaksi atomik.
+*   **Analisis Project**: Risiko terbesar e-voting adalah *Double Voting*. Sistem mengatasinya dengan pengecekan flag `has_voted` di dalam RPC `submit_vote` yang dikunci memakai `SELECT ... FOR UPDATE` (row lock), sehingga aman dari race condition.
 *   **Tujuan Pengujian**: Mencegah 1 voter memilih lebih dari 1 kali (Double Voting).
 *   **Teknik Pengujian**: Pengujian fungsional dengan skenario pengiriman suara berulang (Race Condition Test).
 *   **Skenario Uji**:
@@ -108,7 +108,7 @@ Berikut adalah penjabaran lengkap pengujian berdasarkan 10 risiko keamanan terat
         ```
 *   **Hasil yang Diharapkan**:
     *   **API**: Salah satu request return success, lainnya return JSON `{ status: 'error', message: 'Mahasiswa ini sudah menggunakan hak pilihnya.' }`.
-    *   **DB**: Upaya insert ganda memicu pelanggaran constraint unik `voters_voter_nim_key`.
+    *   **DB**: Row lock (`FOR UPDATE`) pada baris `voters` membuat request kedua menunggu, lalu ditolak karena `has_voted` sudah `true`. Hanya 1 baris masuk ke tabel `votes`.
 *   **Manfaat / Dampak**: Menjamin prinsip "One Person One Vote" mutlak terpenuhi. Integritas hasil pemilihan tidak bisa dirusak oleh script voting otomatis.
 *   **Bukti Dokumentasi (Screen Capture)**:
     1.  **Network Tab**: Screenshot dua request bersamaan, satu status `200`, satu status error.

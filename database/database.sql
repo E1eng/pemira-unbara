@@ -167,7 +167,8 @@ CREATE POLICY "Public view candidates" ON candidates FOR SELECT USING (true);
 CREATE POLICY "Admin manage candidates" ON candidates FOR ALL TO authenticated USING (is_admin()) WITH CHECK (is_admin());
 
 -- VOTERS
-CREATE POLICY "Public count voters" ON voters FOR SELECT USING (true);
+-- PENTING: voters TIDAK boleh bisa di-SELECT publik (berisi PII + access_code_hash).
+-- Halaman publik hanya butuh JUMLAH pemilih, disediakan via RPC get_dpt_count().
 CREATE POLICY "Admin modify voters" ON voters FOR ALL TO authenticated USING (is_admin()) WITH CHECK (is_admin());
 
 -- VOTES
@@ -399,6 +400,12 @@ CREATE OR REPLACE FUNCTION admin_add_voter(
   p_access_code_plain text
 ) RETURNS void AS $$
 BEGIN
+  -- Defense-in-depth: fungsi ini SECURITY DEFINER (bypass RLS),
+  -- jadi pastikan caller benar-benar admin meski sudah dibatasi GRANT.
+  IF NOT is_admin() THEN
+    RAISE EXCEPTION 'Unauthorized: admin only';
+  END IF;
+
   INSERT INTO voters (nim, name, faculty, major, access_code_hash)
   VALUES (
     p_nim,
@@ -477,6 +484,11 @@ RETURNS TABLE (
   participation_percentage numeric
 ) AS $$
 BEGIN
+  -- Defense-in-depth: hanya admin yang boleh melihat statistik partisipasi.
+  IF NOT is_admin() THEN
+    RAISE EXCEPTION 'Unauthorized: admin only';
+  END IF;
+
   RETURN QUERY
   SELECT
     v.faculty,
@@ -490,10 +502,29 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- =============================================
+-- 17b. FUNCTION: get_dpt_count (Total DPT untuk halaman publik)
+-- =============================================
+-- voters tidak public-readable, jadi halaman publik (Home/Results)
+-- memakai fungsi ini untuk menampilkan jumlah pemilih terdaftar saja.
+CREATE OR REPLACE FUNCTION get_dpt_count()
+RETURNS bigint
+LANGUAGE sql
+SECURITY DEFINER
+STABLE
+SET search_path = public
+AS $$
+  SELECT count(*)::bigint FROM voters;
+$$;
+
+-- =============================================
 -- 18. GRANT PERMISSIONS
 -- =============================================
 -- admin_add_voter: hanya authenticated (admin)
+-- PENTING: REVOKE dari 'public' saja TIDAK cukup di Supabase, karena role
+-- 'anon' & 'authenticated' mendapat GRANT EXECUTE default secara eksplisit.
+-- Harus REVOKE eksplisit dari 'anon' untuk mencegah Broken Access Control (OWASP A01).
 REVOKE ALL ON FUNCTION admin_add_voter(text, text, text, text, text) FROM public;
+REVOKE EXECUTE ON FUNCTION admin_add_voter(text, text, text, text, text) FROM anon;
 GRANT EXECUTE ON FUNCTION admin_add_voter(text, text, text, text, text) TO authenticated;
 
 -- submit_vote: anon (voter belum login supabase auth) + authenticated
@@ -506,14 +537,23 @@ GRANT EXECUTE ON FUNCTION get_vote_recap() TO anon, authenticated;
 
 -- get_participation_stats: hanya admin
 REVOKE ALL ON FUNCTION get_participation_stats() FROM public;
+REVOKE EXECUTE ON FUNCTION get_participation_stats() FROM anon;
 GRANT EXECUTE ON FUNCTION get_participation_stats() TO authenticated;
 
 -- validate_voter: anon (dipakai saat login voter)
 REVOKE ALL ON FUNCTION validate_voter(text, text, jsonb) FROM public;
 GRANT EXECUTE ON FUNCTION validate_voter(text, text, jsonb) TO anon, authenticated;
 
--- _increment_rate_limit: internal helper, no public access
+-- get_dpt_count: publik (hanya mengembalikan angka jumlah DPT)
+REVOKE ALL ON FUNCTION get_dpt_count() FROM public;
+GRANT EXECUTE ON FUNCTION get_dpt_count() TO anon, authenticated;
+
+-- _increment_rate_limit: internal helper, no external access
+-- Hanya dipanggil dari dalam submit_vote/validate_voter (SECURITY DEFINER),
+-- jadi anon & authenticated harus di-revoke agar tidak bisa dipanggil via REST RPC.
 REVOKE ALL ON FUNCTION _increment_rate_limit(text, int, interval, timestamptz) FROM public;
+REVOKE EXECUTE ON FUNCTION _increment_rate_limit(text, int, interval, timestamptz) FROM anon;
+REVOKE EXECUTE ON FUNCTION _increment_rate_limit(text, int, interval, timestamptz) FROM authenticated;
 
 -- =============================================
 -- 19. TRIGGERS - AUTOMATIC AUDIT LOGGING

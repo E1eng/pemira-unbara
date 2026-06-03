@@ -114,10 +114,12 @@ Prinsip: **deny by default**
 | Tabel | Public | Admin |
 |-------|--------|-------|
 | `candidates` | SELECT ✓ | CRUD ✓ |
-| `voters` | ✗ | CRUD ✓ |
+| `voters` | ✗ (count via RPC) | CRUD ✓ |
 | `votes` | ✗ | via RPC only |
 | `audit_logs` | ✗ | SELECT ✓ |
 | `election_settings` | SELECT ✓ | UPDATE ✓ |
+
+> Tabel `voters` **tidak** bisa di-SELECT publik. Halaman publik hanya mengambil jumlah pemilih melalui RPC `get_dpt_count()`.
 
 ## RPC Functions
 
@@ -137,19 +139,29 @@ Fungsi voting:
 
 ### `get_vote_recap()`
 
-Mengembalikan total suara per kandidat (aggregate).
+Mengembalikan total suara per kandidat (aggregate). Untuk non-admin, hasil hanya tampil jika `show_live_result = true` (di-enforce di level fungsi).
 
 ### `get_participation_stats()`
 
-Statistik partisipasi per fakultas.
+Statistik partisipasi per fakultas (admin only).
+
+### `get_dpt_count()`
+
+Mengembalikan jumlah total pemilih terdaftar (angka saja). Dipakai halaman publik karena tabel `voters` tidak bisa dibaca langsung.
+
+### `validate_voter(p_nim, p_access_code_plain, p_client_info)`
+
+Validasi NIM + token saat login pemilih (tanpa side-effect ke data suara), termasuk pengecekan rate limit.
 
 ## Rate Limiting
 
-- **Max fail**: 25
-- **Window**: 10 menit
-- **Key**: `sha256(IP + User-Agent)`
+Strategi **dual-key** (anti brute force):
 
-Saat sukses voting, state rate limit dihapus.
+- **Key per perangkat**: `dev:<sha256(IP + User-Agent)>` — maksimal **10** gagal
+- **Key per akun**: `nim:<sha256(NIM)>` — maksimal **5** gagal
+- **Window**: 10 menit (setelah ambang tercapai, terkunci 10 menit)
+
+Saat login/voting sukses, state rate limit untuk kedua key dihapus.
 
 ## Checklist Verifikasi
 

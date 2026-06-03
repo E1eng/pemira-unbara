@@ -175,7 +175,6 @@ export default function AdminCandidatesPage() {
       const { error } = await supabase
         .from('candidates')
         .update({
-          name: chairmanName.trim(), // Legacy field for backward compatibility
           candidate_number: Number(candidateNumber),
           chairman_name: chairmanName.trim(),
           vice_chairman_name: viceChairmanName.trim(),
@@ -194,7 +193,6 @@ export default function AdminCandidatesPage() {
       const { error } = await supabase
         .from('candidates')
         .insert({
-          name: chairmanName.trim(), // Legacy field for backward compatibility
           candidate_number: Number(candidateNumber),
           chairman_name: chairmanName.trim(),
           vice_chairman_name: viceChairmanName.trim(),

@@ -175,12 +175,12 @@ export default function ResultsPage() {
     if (isInitialLoad) setLoading(true)
     else setRefreshing(true)
 
-    const [rpc, votersRef] = await Promise.all([
+    const [rpc, dptCountRes] = await Promise.all([
       supabase.rpc('get_vote_recap'),
-      supabase.from('voters').select('*', { count: 'exact', head: true })
+      supabase.rpc('get_dpt_count')
     ])
 
-    if (votersRef.count !== null) setTotalDpt(votersRef.count)
+    if (!dptCountRes.error && dptCountRes.data !== null) setTotalDpt(Number(dptCountRes.data))
 
     if (!rpc.error && Array.isArray(rpc.data)) {
       const mapped = rpc.data.map((r) => ({

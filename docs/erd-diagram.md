@@ -106,7 +106,7 @@ erDiagram
 │                               │  CANDIDATES  │                   │
 │                               │              │                   │
 │                               │  id (PK)     │                   │
-│                               │  name        │                   │
+│                               │ chairman_name│                   │
 │                               │  vision/misi │                   │
 │                               └──────────────┘                   │
 │                                                                   │

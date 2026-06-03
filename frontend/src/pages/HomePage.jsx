@@ -21,16 +21,16 @@ export default function HomePage() {
     let cancelled = false
 
     const load = async () => {
-      // Parallel fetch settings and DPT
-      const [settingsRes, votersRes] = await Promise.all([
+      // Parallel fetch settings and DPT count (via RPC, voters table is not public-readable)
+      const [settingsRes, dptCountRes] = await Promise.all([
         supabase.from('election_settings').select('is_voting_open, show_live_result').single(),
-        supabase.from('voters').select('*', { count: 'exact', head: true })
+        supabase.rpc('get_dpt_count')
       ])
 
       if (cancelled) return
 
       if (!settingsRes.error && settingsRes.data) setSettings(settingsRes.data)
-      if (votersRes.count !== null) setDptCount(votersRes.count)
+      if (!dptCountRes.error && dptCountRes.data !== null) setDptCount(Number(dptCountRes.data))
     }
 
     load()
