@@ -20,9 +20,10 @@ function TicketCard({ candidate, onDetail, onSelect, isVotingOpen, disabled }) {
       animate={{ opacity: 1, y: 0 }}
       className="group relative bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden hover:shadow-md transition-all duration-300 hover:-translate-y-0.5"
     >
-      <div className="flex">
-        {/* Left: Photo 1:1 (compact, fixed size) */}
-        <div className="relative shrink-0 w-36 sm:w-44 aspect-square bg-zinc-100 overflow-hidden border-r border-zinc-100">
+      {/* Mobile: vertikal (foto full-width di atas) | Desktop: horizontal (foto kompak di kiri) */}
+      <div className="flex flex-col sm:flex-row">
+        {/* Photo 1:1 — mobile full-width, desktop fixed 176px */}
+        <div className="relative shrink-0 w-full sm:w-44 aspect-square bg-zinc-100 overflow-hidden border-b sm:border-b-0 sm:border-r border-zinc-100">
           {hasPhoto ? (
             <img
               src={candidate.photo_url}
@@ -32,38 +33,38 @@ function TicketCard({ candidate, onDetail, onSelect, isVotingOpen, disabled }) {
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-zinc-300">
-              <User className="w-12 h-12" />
+              <User className="w-16 sm:w-12 h-16 sm:h-12" />
             </div>
           )}
 
           {/* Number Badge */}
-          <div className="absolute top-2 left-2 bg-white/95 backdrop-blur-md border border-white/50 shadow-sm px-2.5 py-1 rounded-lg">
-            <span className="text-xs font-bold text-zinc-900">#{candidate.candidate_number}</span>
+          <div className="absolute top-3 left-3 sm:top-2 sm:left-2 bg-white/95 backdrop-blur-md border border-white/50 shadow-sm px-3 py-1.5 sm:px-2.5 sm:py-1 rounded-xl sm:rounded-lg">
+            <span className="text-sm sm:text-xs font-bold text-zinc-900">#{candidate.candidate_number}</span>
           </div>
         </div>
 
-        {/* Right: Info & Actions */}
-        <div className="flex-1 min-w-0 p-4 sm:p-5 flex flex-col justify-between">
-          <div className="mb-3">
-            <h3 className="text-base sm:text-lg font-bold text-zinc-900 leading-tight truncate">
+        {/* Info & Actions */}
+        <div className="flex-1 min-w-0 p-5 flex flex-col justify-between">
+          <div className="mb-4 sm:mb-3">
+            <h3 className="text-lg font-bold text-zinc-900 leading-tight sm:truncate">
               {candidate.chairman_name}
             </h3>
-            <p className="text-sm font-semibold text-zinc-500 mt-1 truncate">
+            <p className="text-sm font-semibold text-zinc-500 mt-1 sm:truncate">
               & {candidate.vice_chairman_name}
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-3 sm:gap-2">
             <button
               onClick={() => onDetail(candidate)}
-              className="w-full py-2 rounded-xl bg-zinc-50 text-zinc-600 text-xs font-bold border border-zinc-100 hover:bg-zinc-100 transition-all active:scale-[0.97]"
+              className="w-full py-2.5 sm:py-2 rounded-xl bg-zinc-50 text-zinc-600 text-xs font-bold border border-zinc-100 hover:bg-zinc-100 transition-all active:scale-[0.97]"
             >
               Detail
             </button>
             <button
               onClick={() => onSelect(candidate)}
               disabled={disabled}
-              className="w-full py-2 rounded-xl bg-gov-accent text-white text-xs font-bold shadow-md shadow-gov-accent/20 hover:brightness-110 active:scale-[0.97] transition-all disabled:opacity-50 disabled:grayscale"
+              className="w-full py-2.5 sm:py-2 rounded-xl bg-gov-accent text-white text-xs font-bold shadow-md shadow-gov-accent/20 hover:brightness-110 active:scale-[0.97] transition-all disabled:opacity-50 disabled:grayscale"
             >
               Pilih
             </button>
