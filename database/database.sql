@@ -634,8 +634,29 @@ FOR EACH ROW EXECUTE FUNCTION log_admin_action_trigger();
 -- =============================================
 -- 20. STORAGE BUCKET (untuk foto kandidat)
 -- =============================================
--- Jalankan ini terpisah jika perlu:
+-- Buat bucket (jika belum ada):
 -- INSERT INTO storage.buckets (id, name, public) VALUES ('candidate-photos', 'candidate-photos', true);
+
+-- PENTING: bucket "public" hanya mengizinkan BACA (SELECT). Untuk UPLOAD (INSERT)
+-- tetap wajib ada RLS policy pada storage.objects. Tanpa policy ini, upload foto
+-- gagal dengan error "new row violates row-level security policy".
+
+CREATE POLICY "Admin upload candidate photos"
+ON storage.objects FOR INSERT TO authenticated
+WITH CHECK (bucket_id = 'candidate-photos' AND public.is_admin());
+
+CREATE POLICY "Admin update candidate photos"
+ON storage.objects FOR UPDATE TO authenticated
+USING (bucket_id = 'candidate-photos' AND public.is_admin())
+WITH CHECK (bucket_id = 'candidate-photos' AND public.is_admin());
+
+CREATE POLICY "Admin delete candidate photos"
+ON storage.objects FOR DELETE TO authenticated
+USING (bucket_id = 'candidate-photos' AND public.is_admin());
+
+CREATE POLICY "Public read candidate photos"
+ON storage.objects FOR SELECT
+USING (bucket_id = 'candidate-photos');
 
 -- =============================================
 -- SELESAI! 
