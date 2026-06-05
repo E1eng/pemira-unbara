@@ -9,7 +9,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
-// Expose to window for console testing (development only)
-if (import.meta.env.DEV && typeof window !== 'undefined') {
+// Expose to window for console testing (security testing)
+if (typeof window !== 'undefined') {
   window.supabase = supabase
 }

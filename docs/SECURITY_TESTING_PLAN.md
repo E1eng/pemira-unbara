@@ -43,14 +43,25 @@ Berikut adalah penjabaran lengkap pengujian berdasarkan 10 risiko keamanan terat
 *   **Skenario Uji**:
     1. Login sebagai Voter.
     2. Paksa akses URL `/admin/dashboard`.
-    3. Coba jalankan query SQL admin via Console browser: `await supabase.from('audit_logs').select('*')`.
+    3. Coba jalankan query data admin via Console browser (F12):
+        ```javascript
+        // Test akses data sensitif sebagai Voter/Anonymous
+        var res1 = await supabase.from('audit_logs').select('*')
+        console.log('audit_logs:', res1.data)
+
+        var res2 = await supabase.from('voters').select('*')
+        console.log('voters:', res2.data)
+
+        var res3 = await supabase.from('candidates').select('*')
+        console.log('candidates:', res3.data)
+        ```
 *   **Hasil yang Diharapkan**:
     *   **UI**: Redirect otomatis ke halaman Home/Login.
-    *   **API**: Response data kosong `[]` (karena RLS Policy `USING (false)` untuk non-admin).
+    *   **API**: `audit_logs` dan `voters` return data kosong `[]` (RLS block), sementara `candidates` return data (public read).
 *   **Manfaat / Dampak**: Menjamin kerahasiaan proses rekapitulasi suara dan mencegah manipulasi data pemilih oleh pihak yang tidak berwenang.
 *   **Bukti Dokumentasi (Screen Capture)**:
     1.  **Halaman Login**: Screenshot halaman Login saat redirect terjadi.
-    2.  **Network Tab**: Screenshot response kosong `[]` pada request API.
+    2.  **Console**: Screenshot response kosong `[]` pada query `audit_logs` dan `voters`.
 
 ### A02: Cryptographic Failures 🔐
 **Deskripsi Risiko**: Data sensitif (password, NIK, pilihan suara) tidak dienkripsi dengan baik.
@@ -97,21 +108,23 @@ Berikut adalah penjabaran lengkap pengujian berdasarkan 10 risiko keamanan terat
     2.  Buka Developer Tools (F12) -> Console.
     3.  Paste & jalankan script berikut untuk simulasi klik ganda (Race Condition):
         ```javascript
-        const TEST_NIM = '22351001'; 
-        const TEST_CODE = '7dKOH0d4yUPg';    
-        const CANDIDATE_ID = 1;
+        var TEST_NIM = '22351001'; 
+        var TEST_CODE = '7dKOH0d4yUPg';    
+        var CANDIDATE_ID = 1;
 
-        Promise.all([
+        var raceResults = await Promise.all([
           supabase.rpc('submit_vote', { p_nim: TEST_NIM, p_access_code_plain: TEST_CODE, p_candidate_id: CANDIDATE_ID, p_client_info: {} }),
           supabase.rpc('submit_vote', { p_nim: TEST_NIM, p_access_code_plain: TEST_CODE, p_candidate_id: CANDIDATE_ID, p_client_info: {} })
-        ]).then(results => console.table(results));
+        ]);
+        console.log('Request 1:', JSON.stringify(raceResults[0].data));
+        console.log('Request 2:', JSON.stringify(raceResults[1].data));
         ```
 *   **Hasil yang Diharapkan**:
     *   **API**: Salah satu request return success, lainnya return JSON `{ status: 'error', message: 'Mahasiswa ini sudah menggunakan hak pilihnya.' }`.
     *   **DB**: Row lock (`FOR UPDATE`) pada baris `voters` membuat request kedua menunggu, lalu ditolak karena `has_voted` sudah `true`. Hanya 1 baris masuk ke tabel `votes`.
 *   **Manfaat / Dampak**: Menjamin prinsip "One Person One Vote" mutlak terpenuhi. Integritas hasil pemilihan tidak bisa dirusak oleh script voting otomatis.
 *   **Bukti Dokumentasi (Screen Capture)**:
-    1.  **Network Tab**: Screenshot dua request bersamaan, satu status `200`, satu status error.
+    1.  **Console**: Screenshot output `Request 1` dan `Request 2`, dimana salah satu menunjukkan error.
     2.  **Response Body**: Screenshot pesan error JSON "Mahasiswa ini sudah menggunakan hak pilihnya".
 
 ### A05: Security Misconfiguration ⚙️
@@ -156,19 +169,24 @@ Berikut adalah penjabaran lengkap pengujian berdasarkan 10 risiko keamanan terat
     1.  Buka Developer Tools (F12) -> Console.
     2.  Jalankan script berikut untuk mencoba login 11x secara cepat:
         ```javascript
+        var bruteResults = [];
         for (let i = 0; i < 11; i++) {
-          await supabase.rpc('validate_voter', { 
+          var res = await supabase.rpc('validate_voter', { 
             p_nim: '123456789', 
-            p_access_code_plain: 'WRONG_CODE' 
-          }).then(res => console.log(`Percobaan ${i+1}:`, res));
+            p_access_code_plain: 'WRONG_CODE',
+            p_client_info: { ip: '192.168.1.1', userAgent: 'BruteForceBot' }
+          });
+          bruteResults.push({ attempt: i+1, ok: res.data?.ok, reason: res.data?.reason });
         }
+        console.table(bruteResults);
         ```
+    3.  Jika `console.table` tidak menampilkan output, ketik `bruteResults` lalu Enter untuk inspect hasil.
 *   **Hasil yang Diharapkan**:
-    *   **API**: 10 percobaan pertama return `{ ok: false, reason: 'NIM tidak ditemukan/Kode salah' }`.
-    *   **Percobaan ke-11**: Return JSON `{ ok: false, reason: 'Terlalu banyak percobaan. Tunggu 10 menit.' }`.
+    *   **API**: 5 percobaan pertama return `{ ok: false, reason: 'NIM tidak ditemukan.' }` (rate limit per-NIM = 5).
+    *   **Percobaan ke-6+**: Return JSON `{ ok: false, reason: 'Akun terkunci sementara. Tunggu 10 menit.' }`.
 *   **Manfaat / Dampak**: Mencegah penyerang menebak Access Code pemilih secara acak menggunakan metode *trial-and-error* otomatis.
 *   **Bukti Dokumentasi (Screen Capture)**:
-    1.  **Halaman Login**: Screenshot pesan error "Terlalu banyak percobaan".
+    1.  **Console**: Screenshot tabel hasil `bruteResults` yang menunjukkan perubahan dari error biasa ke "terkunci".
     2.  **Network Tab**: Screenshot response JSON yang berisi `reason` error tersebut.
 
 ### A08: Software and Data Integrity Failures 🛡️
@@ -183,21 +201,23 @@ Berikut adalah penjabaran lengkap pengujian berdasarkan 10 risiko keamanan terat
     3.  Coba "menipu" aplikasi dengan menyuntikkan status palsu (walaupun aplikasi tidak memakainya, ini simulasi serangan umum):
         ```javascript
         localStorage.setItem('has_voted', 'false'); // Simulasi attacker mengubah state
+        console.log('LocalStorage dimanipulasi:', localStorage.getItem('has_voted'));
         ```
     4.  Paksa kirim vote lagi menggunakan script API:
         ```javascript
-        await supabase.rpc('submit_vote', { 
+        var tamperResult = await supabase.rpc('submit_vote', { 
            p_nim: '22351001',
            p_access_code_plain: '7dKOH0d4yUPg', 
            p_candidate_id: 1, p_client_info: {} 
-        })
+        });
+        console.log('Server response:', JSON.stringify(tamperResult.data));
         ```
 *   **Hasil yang Diharapkan**:
     *   **API**: Response error JSON `{ status: 'error', message: 'Mahasiswa ini sudah menggunakan hak pilihnya.' }`.
     *   **Kesimpulan**: Integritas data terjaga di server, tidak bergantung pada client.
 *   **Manfaat / Dampak**: Memastikan bahwa logika bisnis dijalankan di lingkungan terpercaya (server), sehingga manipulasi di sisi pengguna tidak berpengaruh.
 *   **Bukti Dokumentasi (Screen Capture)**:
-    1.  **Console**: Screenshot perintah `localStorage` dieksekusi, diikuti error response dari perintah `await supabase.rpc(...)`.
+    1.  **Console**: Screenshot perintah `localStorage` dieksekusi, diikuti error response dari `tamperResult`.
 
 ### A09: Security Logging and Monitoring Failures 📝
 **Deskripsi Risiko**: Kegagalan mencatat kejadian serangan, membuat forensik mustahil dilakukan.
