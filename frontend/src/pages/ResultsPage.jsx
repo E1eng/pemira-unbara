@@ -4,7 +4,40 @@ import { useNavigate } from 'react-router-dom'
 import Layout from '../components/Layout.jsx'
 import Toast from '../components/Toast.jsx'
 import { supabase } from '../lib/supabaseClient.js'
-import { BarChart3, Lock, RefreshCw, Trophy, Users, Vote } from 'lucide-react'
+import { BarChart3, Clock, Lock, RefreshCw, Trophy, Users, Vote } from 'lucide-react'
+
+// --- Helpers ---
+
+/**
+ * Largest-remainder method: hitung persentase integer yang totalnya selalu 100.
+ * Mencegah anomali "33% + 33% + 33% = 99%".
+ */
+function computeIntegerPercentages(values) {
+  const sum = values.reduce((a, b) => a + b, 0)
+  if (sum <= 0) return values.map(() => 0)
+  const raws = values.map(v => (v / sum) * 100)
+  const floors = raws.map(r => Math.floor(r))
+  const remainder = 100 - floors.reduce((a, b) => a + b, 0)
+  const order = raws
+    .map((r, i) => ({ i, frac: r - Math.floor(r) }))
+    .sort((a, b) => b.frac - a.frac)
+  const result = floors.slice()
+  for (let k = 0; k < remainder && k < order.length; k++) {
+    result[order[k].i] += 1
+  }
+  return result
+}
+
+function formatRelative(date, now) {
+  if (!date) return '—'
+  const diff = Math.max(0, Math.floor((now - date.getTime()) / 1000))
+  if (diff < 5) return 'baru saja'
+  if (diff < 60) return `${diff} detik lalu`
+  if (diff < 3600) return `${Math.floor(diff / 60)} menit lalu`
+  return `${Math.floor(diff / 3600)} jam lalu`
+}
+
+const fmt = (n) => Number(n || 0).toLocaleString('id-ID')
 
 // --- Components ---
 
@@ -21,16 +54,16 @@ function StatCard({ label, value, sublabel, icon: Icon, colorClass }) {
   )
 }
 
-function LeaderCard({ candidate, pct, totalVotes, isVotingOpen }) {
+function LeaderCard({ candidate, pct, isVotingOpen, isTie }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="relative w-full overflow-hidden rounded-2xl bg-white border border-indigo-100 shadow-lg shadow-indigo-500/10"
+      className={`relative w-full overflow-hidden rounded-2xl bg-white border shadow-lg ${isTie ? 'border-amber-100 shadow-amber-500/10' : 'border-indigo-100 shadow-indigo-500/10'}`}
     >
-      <div className="absolute top-0 inset-x-0 h-24 bg-gradient-to-b from-indigo-50 to-transparent pointer-events-none" />
-      <div className="absolute top-4 right-4 p-2 bg-white/80 backdrop-blur rounded-xl border border-indigo-50 shadow-sm z-10">
-        <Trophy className="w-6 h-6 text-amber-500 fill-amber-500" />
+      <div className={`absolute top-0 inset-x-0 h-24 bg-gradient-to-b to-transparent pointer-events-none ${isTie ? 'from-amber-50' : 'from-indigo-50'}`} />
+      <div className="absolute top-4 right-4 p-2 bg-white/80 backdrop-blur rounded-xl border border-zinc-100 shadow-sm z-10">
+        <Trophy className={`w-6 h-6 ${isTie ? 'text-zinc-400 fill-zinc-300' : 'text-amber-500 fill-amber-500'}`} />
       </div>
 
       <div className="flex flex-col items-center pt-8 pb-6 px-6 relative z-10 text-center">
@@ -44,7 +77,7 @@ function LeaderCard({ candidate, pct, totalVotes, isVotingOpen }) {
             )}
           </div>
           <div className="absolute -bottom-3 inset-x-0 flex justify-center">
-            <span className="bg-amber-100 text-amber-700 border border-amber-200 text-xs font-bold px-3 py-1 rounded-full shadow-sm">
+            <span className={`text-xs font-bold px-3 py-1 rounded-full shadow-sm border ${isTie ? 'bg-amber-100 text-amber-700 border-amber-200' : 'bg-indigo-100 text-indigo-700 border-indigo-200'}`}>
               #{candidate.candidateNumber}
             </span>
           </div>
@@ -60,8 +93,8 @@ function LeaderCard({ candidate, pct, totalVotes, isVotingOpen }) {
 
         {/* Big Percentage */}
         <div className="mt-6 mb-2">
-          <span className="text-5xl font-black text-indigo-600 tracking-tighter">{pct}%</span>
-          <span className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mt-1">{candidate.total.toLocaleString()} Suara</span>
+          <span className={`text-5xl font-black tracking-tighter ${isTie ? 'text-amber-600' : 'text-indigo-600'}`}>{pct}%</span>
+          <span className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mt-1">{fmt(candidate.total)} Suara</span>
         </div>
 
         {/* Progress Bar */}
@@ -70,12 +103,17 @@ function LeaderCard({ candidate, pct, totalVotes, isVotingOpen }) {
             initial={{ width: 0 }}
             animate={{ width: `${pct}%` }}
             transition={{ duration: 1, delay: 0.2 }}
-            className="absolute inset-y-0 left-0 bg-gradient-to-r from-indigo-500 to-indigo-400 rounded-full"
+            className={`absolute inset-y-0 left-0 rounded-full bg-gradient-to-r ${isTie ? 'from-amber-500 to-amber-400' : 'from-indigo-500 to-indigo-400'}`}
           />
         </div>
 
-        <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-indigo-50 border border-indigo-100 text-[10px] font-bold text-indigo-700 uppercase tracking-wide">
-          {isVotingOpen ? (
+        <div className={`mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border text-[10px] font-bold uppercase tracking-wide ${isTie ? 'bg-amber-50 border-amber-100 text-amber-700' : 'bg-indigo-50 border-indigo-100 text-indigo-700'}`}>
+          {isTie ? (
+            <>
+              <span className="w-2 h-2 rounded-full bg-amber-500" />
+              Hasil Seri
+            </>
+          ) : isVotingOpen ? (
             <>
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
@@ -100,8 +138,8 @@ function CandidateItem({ candidate, pct, index }) {
     <motion.div
       initial={{ opacity: 0, x: -10 }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: index * 0.1 }}
-      className="flex items-center gap-4 p-3 rounded-2xl bg-white border border-zinc-200 shadow-sm"
+      transition={{ delay: Math.min(index * 0.05, 0.4) }}
+      className="flex items-center gap-4 p-3 rounded-2xl bg-white border border-zinc-200 shadow-sm hover:shadow-md transition-shadow"
     >
       <div className="w-14 h-14 shrink-0 rounded-xl bg-zinc-100 overflow-hidden border border-zinc-100">
         {candidate.photoUrl ? (
@@ -112,9 +150,9 @@ function CandidateItem({ candidate, pct, index }) {
       </div>
 
       <div className="flex-1 min-w-0">
-        <div className="flex justify-between items-start mb-1">
-          <div>
-            <h3 className="text-sm font-bold text-zinc-900 truncate pr-2">{candidate.chairmanName}</h3>
+        <div className="flex justify-between items-start mb-1 gap-2">
+          <div className="min-w-0 flex-1">
+            <h3 className="text-sm font-bold text-zinc-900 truncate">{candidate.chairmanName}</h3>
             <p className="text-xs text-zinc-500 truncate">{candidate.viceChairmanName}</p>
           </div>
           <div className="text-right shrink-0">
@@ -130,7 +168,7 @@ function CandidateItem({ candidate, pct, index }) {
               className="h-full bg-indigo-400 rounded-full"
             />
           </div>
-          <span className="text-[10px] font-mono text-zinc-400 shrink-0">{candidate.total} Suara</span>
+          <span className="text-[10px] font-mono text-zinc-400 shrink-0">{fmt(candidate.total)} Suara</span>
         </div>
       </div>
 
@@ -138,6 +176,21 @@ function CandidateItem({ candidate, pct, index }) {
         {candidate.candidateNumber}
       </div>
     </motion.div>
+  )
+}
+
+function ResultsSkeleton() {
+  return (
+    <div className="space-y-4 animate-pulse">
+      <div className="grid grid-cols-3 gap-3">
+        <div className="h-24 rounded-2xl bg-white border border-zinc-200" />
+        <div className="h-24 rounded-2xl bg-white border border-zinc-200" />
+        <div className="h-24 rounded-2xl bg-white border border-zinc-200" />
+      </div>
+      <div className="h-96 rounded-2xl bg-white border border-zinc-200" />
+      <div className="h-20 rounded-2xl bg-white border border-zinc-200" />
+      <div className="h-20 rounded-2xl bg-white border border-zinc-200" />
+    </div>
   )
 }
 
@@ -151,11 +204,23 @@ export default function ResultsPage() {
   const [showLiveResult, setShowLiveResult] = useState(null)
   const [isVotingOpen, setIsVotingOpen] = useState(true)
   const [totalDpt, setTotalDpt] = useState(0)
+  const [lastUpdated, setLastUpdated] = useState(null)
+  const [now, setNow] = useState(Date.now())
   const rowsRef = useRef([])
   const [toast, setToast] = useState({ open: false, message: '' })
 
+  // Ticker untuk relative time "X detik lalu"
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(t)
+  }, [])
+
   const checkSettings = useCallback(async () => {
-    const { data, error } = await supabase.from('election_settings').select('show_live_result, is_voting_open').eq('id', 1).single()
+    const { data, error } = await supabase
+      .from('election_settings')
+      .select('show_live_result, is_voting_open')
+      .eq('id', 1)
+      .single()
     if (error || !data) {
       setShowLiveResult(false)
       return false
@@ -168,7 +233,9 @@ export default function ResultsPage() {
   const fetchRecap = useCallback(async () => {
     const allowed = await checkSettings()
     if (!allowed) {
-      setRows([]); setLoading(false); setRefreshing(false);
+      setRows([])
+      setLoading(false)
+      setRefreshing(false)
       return
     }
     const isInitialLoad = rowsRef.current.length === 0
@@ -177,22 +244,28 @@ export default function ResultsPage() {
 
     const [rpc, dptCountRes] = await Promise.all([
       supabase.rpc('get_vote_recap'),
-      supabase.rpc('get_dpt_count')
+      supabase.rpc('get_dpt_count'),
     ])
 
-    if (!dptCountRes.error && dptCountRes.data !== null) setTotalDpt(Number(dptCountRes.data))
+    if (!dptCountRes.error && dptCountRes.data !== null) {
+      setTotalDpt(Number(dptCountRes.data))
+    }
 
     if (!rpc.error && Array.isArray(rpc.data)) {
-      const mapped = rpc.data.map((r) => ({
-        candidateNumber: r.candidate_number,
-        chairmanName: r.chairman_name,
-        viceChairmanName: r.vice_chairman_name,
-        photoUrl: r.photo_url,
-        total: Number(r.total_votes ?? 0),
-      })).sort((a, b) => b.total - a.total)
+      const mapped = rpc.data
+        .map((r) => ({
+          candidateNumber: r.candidate_number,
+          chairmanName: r.chairman_name,
+          viceChairmanName: r.vice_chairman_name,
+          photoUrl: r.photo_url,
+          total: Number(r.total_votes ?? 0),
+        }))
+        // Urutkan: suara terbanyak dulu, tie-breaker pakai nomor urut menaik
+        .sort((a, b) => b.total - a.total || a.candidateNumber - b.candidateNumber)
 
       rowsRef.current = mapped
       setRows(mapped)
+      setLastUpdated(new Date())
     } else {
       setRows([])
       setToast({ open: true, message: rpc.error?.message || 'Gagal memuat data' })
@@ -201,14 +274,45 @@ export default function ResultsPage() {
     setRefreshing(false)
   }, [checkSettings])
 
+  // Initial fetch
   useEffect(() => {
     fetchRecap()
-    const interval = setInterval(fetchRecap, 10000)
-    return () => clearInterval(interval)
   }, [fetchRecap])
 
-  const totalVotes = useMemo(() => rows.reduce((sum, r) => sum + r.total, 0), [rows])
-  const [leader, ...runnersUp] = rows
+  // Polling hanya saat hasil diizinkan dipublikasi
+  useEffect(() => {
+    if (showLiveResult !== true) return undefined
+    const interval = setInterval(fetchRecap, 10000)
+    return () => clearInterval(interval)
+  }, [showLiveResult, fetchRecap])
+
+  const totalVotes = useMemo(() => rows.reduce((s, r) => s + r.total, 0), [rows])
+
+  // Persentase presisi: largest-remainder → total selalu 100%
+  const percentages = useMemo(
+    () => computeIntegerPercentages(rows.map((r) => r.total)),
+    [rows]
+  )
+
+  // Deteksi seri di posisi puncak
+  const { leaders, others, isTie } = useMemo(() => {
+    if (rows.length === 0 || rows[0].total === 0) {
+      return { leaders: [], others: rows.map((r, i) => [r, i]), isTie: false }
+    }
+    const topVotes = rows[0].total
+    const leadersArr = []
+    const othersArr = []
+    rows.forEach((r, i) => {
+      if (r.total === topVotes) leadersArr.push([r, i])
+      else othersArr.push([r, i])
+    })
+    return { leaders: leadersArr, others: othersArr, isTie: leadersArr.length > 1 }
+  }, [rows])
+
+  const participationPct = totalDpt > 0
+    ? Math.min(100, Math.round((totalVotes / totalDpt) * 100))
+    : 0
+  const remainingDpt = Math.max(0, totalDpt - totalVotes)
 
   // --- Render States ---
 
@@ -233,82 +337,117 @@ export default function ResultsPage() {
     )
   }
 
-  if (loading && rows.length === 0) {
-    return (
-      <Layout>
-        <div className="flex min-h-screen items-center justify-center">
-          <RefreshCw className="w-6 h-6 animate-spin text-zinc-400" />
-        </div>
-      </Layout>
-    )
-  }
-
   return (
     <Layout>
-      <div className="w-full max-w-md mx-auto pb-24 pt-2 space-y-6">
+      <div className="w-full max-w-md sm:max-w-2xl lg:max-w-3xl mx-auto pb-24 pt-2 space-y-6">
         <Toast open={toast.open} variant="error" message={toast.message} onClose={() => setToast({ open: false, message: '' })} />
 
-        {/* Compact Header */}
-        <div className="flex items-center justify-between pb-2">
-          <div>
-            <h1 className="text-2xl font-bold text-zinc-900 tracking-tight">Real Count</h1>
-            <div className="flex items-center gap-1.5 mt-1">
-              <span className={`w-1.5 h-1.5 rounded-full ${refreshing ? 'bg-indigo-500 animate-pulse' : 'bg-emerald-500'}`}></span>
-              <span className="text-xs font-medium text-zinc-500">Live Update</span>
+        {/* Header */}
+        <div className="flex items-start justify-between gap-3 pb-2">
+          <div className="min-w-0">
+            <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 tracking-tight">Hasil Suara</h1>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs text-zinc-500">
+              <span className="inline-flex items-center gap-1.5">
+                <Clock className="w-3 h-3" />
+                <span className="font-medium">Diperbarui {formatRelative(lastUpdated, now)}</span>
+              </span>
+              {refreshing && (
+                <span className="inline-flex items-center gap-1 text-indigo-600">
+                  <RefreshCw className="w-3 h-3 animate-spin" />
+                  <span className="font-semibold">memperbarui…</span>
+                </span>
+              )}
             </div>
           </div>
-          <div className="bg-white px-3 py-1.5 rounded-xl border border-zinc-200 shadow-sm">
-            <span className="text-xs font-bold text-indigo-600">{totalVotes.toLocaleString()}</span>
-            <span className="text-[10px] text-zinc-400 ml-1 font-medium">Suara Masuk</span>
-          </div>
+          <button
+            onClick={() => fetchRecap()}
+            disabled={refreshing}
+            className="inline-flex items-center gap-2 bg-white px-3 py-2 rounded-xl border border-zinc-200 shadow-sm hover:shadow-md transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+            aria-label="Perbarui sekarang"
+            title="Perbarui sekarang"
+          >
+            <RefreshCw className={`w-4 h-4 text-zinc-600 ${refreshing ? 'animate-spin' : ''}`} />
+            <span className="text-xs font-bold text-zinc-700 hidden sm:inline">Perbarui</span>
+          </button>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 gap-3">
-          <StatCard
-            label="Total DPT"
-            value={totalDpt.toLocaleString()}
-            sublabel="Mahasiswa"
-            icon={Users}
-            colorClass="bg-emerald-500 text-emerald-600"
-          />
-          <StatCard
-            label="Partisipasi"
-            value={`${totalDpt > 0 ? Math.round((totalVotes / totalDpt) * 100) : 0}%`}
-            sublabel={`${(totalDpt - totalVotes).toLocaleString()} Belum`}
-            icon={BarChart3}
-            colorClass="bg-blue-500 text-blue-600"
-          />
-        </div>
-
-        {/* Leader Spotlight */}
-        {leader ? (
-          <div className="mt-4">
-            <LeaderCard
-              candidate={leader}
-              pct={totalVotes > 0 ? Math.round((leader.total / totalVotes) * 100) : 0}
-              isVotingOpen={isVotingOpen}
-            />
-          </div>
+        {loading && rows.length === 0 ? (
+          <ResultsSkeleton />
         ) : (
-          <div className="py-20 text-center text-zinc-400">Belum ada data suara.</div>
-        )}
-
-        {/* Runners Up List */}
-        {runnersUp.length > 0 && (
-          <div className="mt-8">
-            <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider block mb-3 px-1">Kandidat Lainnya</span>
-            <div className="space-y-3">
-              {runnersUp.map((r, i) => (
-                <CandidateItem
-                  key={r.candidateNumber}
-                  candidate={r}
-                  index={i}
-                  pct={totalVotes > 0 ? Math.round((r.total / totalVotes) * 100) : 0}
-                />
-              ))}
+          <>
+            {/* Stats Grid (3 kolom: presisi & informatif) */}
+            <div className="grid grid-cols-3 gap-3">
+              <StatCard
+                label="Suara Masuk"
+                value={fmt(totalVotes)}
+                sublabel="Total"
+                icon={Vote}
+                colorClass="bg-indigo-500 text-indigo-600"
+              />
+              <StatCard
+                label="Total DPT"
+                value={fmt(totalDpt)}
+                sublabel="Mahasiswa"
+                icon={Users}
+                colorClass="bg-emerald-500 text-emerald-600"
+              />
+              <StatCard
+                label="Partisipasi"
+                value={`${participationPct}%`}
+                sublabel={`${fmt(remainingDpt)} belum`}
+                icon={BarChart3}
+                colorClass="bg-blue-500 text-blue-600"
+              />
             </div>
-          </div>
+
+            {/* Leader Spotlight (single atau multi saat seri) */}
+            {leaders.length > 0 ? (
+              <div className="mt-4 space-y-4">
+                {isTie && (
+                  <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-2.5 text-xs sm:text-sm text-amber-800 font-semibold flex items-center gap-2">
+                    <Trophy className="w-4 h-4 text-amber-600 shrink-0" />
+                    <span>Hasil seri — {leaders.length} kandidat memimpin dengan suara sama</span>
+                  </div>
+                )}
+                <div className={isTie ? 'grid grid-cols-1 sm:grid-cols-2 gap-4' : ''}>
+                  {leaders.map(([candidate, idx]) => (
+                    <LeaderCard
+                      key={candidate.candidateNumber}
+                      candidate={candidate}
+                      pct={percentages[idx]}
+                      isVotingOpen={isVotingOpen}
+                      isTie={isTie}
+                    />
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="py-16 text-center rounded-2xl bg-white border border-zinc-200">
+                <Vote className="w-10 h-10 text-zinc-300 mx-auto mb-3" />
+                <p className="text-sm font-semibold text-zinc-500">Belum ada suara masuk</p>
+                <p className="text-xs text-zinc-400 mt-1">Hasil akan tampil setelah voting dimulai.</p>
+              </div>
+            )}
+
+            {/* Others List */}
+            {others.length > 0 && (
+              <div className="mt-8">
+                <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider block mb-3 px-1">
+                  {leaders.length > 0 ? 'Kandidat Lainnya' : 'Daftar Kandidat'}
+                </span>
+                <div className="space-y-3">
+                  {others.map(([candidate, idx], i) => (
+                    <CandidateItem
+                      key={candidate.candidateNumber}
+                      candidate={candidate}
+                      index={i}
+                      pct={percentages[idx]}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
     </Layout>
