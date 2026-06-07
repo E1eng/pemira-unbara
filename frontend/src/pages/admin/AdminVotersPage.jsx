@@ -22,6 +22,7 @@ export default function AdminVotersPage() {
   const [submitting, setSubmitting] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [importing, setImporting] = useState(false)
+  const [importDone, setImportDone] = useState(false)
   const [importProgress, setImportProgress] = useState({ done: 0, total: 0 })
   const [importErrors, setImportErrors] = useState([])
   const [importMasterList, setImportMasterList] = useState([])
@@ -379,6 +380,7 @@ export default function AdminVotersPage() {
     setImportErrors([])
     setImportProgress({ done: 0, total: 0 })
     setImportMasterList([])
+    setImportDone(false)
 
     if (!file) return
 
@@ -479,6 +481,7 @@ export default function AdminVotersPage() {
       }
     } finally {
       setImporting(false)
+      setImportDone(true)
     }
   }
 
@@ -506,6 +509,7 @@ export default function AdminVotersPage() {
               setImportErrors([])
               setImportProgress({ done: 0, total: 0 })
               setImportMasterList([])
+              setImportDone(false)
               setImportOpen(true)
             }}
             className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
@@ -736,7 +740,7 @@ export default function AdminVotersPage() {
             <button
               type="button"
               onClick={startImport}
-              disabled={importing || importMasterList.length === 0}
+              disabled={importing || importMasterList.length === 0 || importDone}
               className="inline-flex h-11 items-center justify-center rounded-xl bg-gov-accent px-4 text-sm font-semibold text-white shadow-sm hover:bg-gov-accent/95 disabled:opacity-50"
             >
               {importing ? 'Mengimpor...' : 'Mulai Import'}
