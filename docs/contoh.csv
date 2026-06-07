@@ -1,16 +1,16 @@
 nim,name,faculty,major
 2111001,Destria Imellia,FKIP,Pendidikan Bahasa Indonesia
 2111002,Iga Amanda,FKIP,Pendidikan Bahasa Inggris
-2111003,Novi Dwi Aprilia,FKIP,Pendidikan Matematika
-2111004,Yuni Saftika,FKIP,Pendidikan Biologi
-2135001,Alda Oktariani,Teknik & Komputer,Informatika
+2211119,Novi Dwi Aprilia,Ekonomi & Bisnis,Manajemen
+2211036,Yuni Saftika,Ekonomi & Bisnis,Manajemen
+2211133,Alda Oktariani,Ekonomi & Bisnis,Manajemen
 2135002,Anisya Julia Putri,Teknik & Komputer,Sistem Informasi
 2135003,Nadya Ovy Seftiandra,Teknik & Komputer,Teknik Industri
-2251001,Dwi Pratiwi,FISIP,Ilmu Komunikasi
-2251002,Nalza Agustin Salsabella,FISIP,Ilmu Administrasi Negara
+2211121,Dwi Pratiwi,Ekonomi & Bisnis,Manajemen
+2351055,Nalza Agustin Salsabella,FISIP,Ilmu Komunikasi
 2221001,Septi Giseila Putriana,Ekonomi & Bisnis,Manajemen
-2221002,Umi Fitriani,Ekonomi & Bisnis,Akuntansi
-2211001,Nadia Ega Putri,FKIP,Pendidikan Bahasa Indonesia
+2311052,Umi Fitriani,Ekonomi & Bisnis,Manajemen
+2335104,Nadia Ega Putri,Teknik & Komputer,Teknik Informatika
 2211002,Atika Maharani,FKIP,Pendidikan Bahasa Inggris
 2211003,Hexa Tri Zahara,FKIP,Pendidikan Matematika
 2211004,Liana Putri,FKIP,Pendidikan Biologi
@@ -18,44 +18,44 @@ nim,name,faculty,major
 2235002,Retno Della,Teknik & Komputer,Sistem Informasi
 2235003,Ega Jusefta,Teknik & Komputer,Teknik Industri
 2251003,Desi Ariyanti,FISIP,Ilmu Komunikasi
-2251004,Jenie Agnesia,FISIP,Ilmu Administrasi Negara
+2313022,Jenie Agnesia,Ekonomi & Bisnis,Akuntansi
 2221003,Muhammad Al Hadad,Ekonomi & Bisnis,Manajemen
-2221004,Ussy Sulistiawati,Ekonomi & Bisnis,Akuntansi
-2211005,Firwinca Billa,FKIP,Pendidikan Bahasa Indonesia
+2213004,Ussy Sulistiawati,Ekonomi & Bisnis,Akuntansi
+2335116,Firwinca Billa,Teknik & Komputer,Teknik Informatika
 2235114,Teddy Al Ghozali,Teknik & Komputer,Informatika
-2211006,Renata Putra Prasetya,FKIP,Pendidikan Matematika
+2334006,Renata Putra Prasetya,Teknik & Komputer,Teknik Lingkungan
 2211007,Trisna Popilavia,FKIP,Pendidikan Biologi
 2235004,Melly Pelisa,Teknik & Komputer,Informatika
 2235005,Andini Julia Syaputri,Teknik & Komputer,Sistem Informasi
-2235006,Ahmad Yulian,Teknik & Komputer,Teknik Industri
-2251005,Seprian Renaldo,FISIP,Ilmu Komunikasi
+2334017,Ahmad Yulian,Teknik & Komputer,Teknik Lingkungan
+2342024,Seprian Renaldo,Pertanian,Agribisnis
 2351077,Nabilla Devita,FISIP,Ilmu Komunikasi
-2321001,Dian Pahera,Ekonomi & Bisnis,Manajemen
-2321002,Shinta Amelia,Ekonomi & Bisnis,Akuntansi
-2311001,Zurriyah Safitri,FKIP,Pendidikan Bahasa Indonesia
-2311002,Rizka Tartila Hafiza,FKIP,Pendidikan Bahasa Inggris
-2311003,Zycra Zeva Az Zahra,FKIP,Pendidikan Matematika
-2311004,Ovie Della Putri,FKIP,Pendidikan Biologi
-2335001,Suci Damai Yanti,Teknik & Komputer,Informatika
-2335002,Dania,Teknik & Komputer,Sistem Informasi
-2335003,Mona Amelia,Teknik & Komputer,Teknik Industri
-2351001,Desty Amelia,FISIP,Ilmu Komunikasi
-2351002,Ratu Aysa,FISIP,Ilmu Administrasi Negara
-2321003,Kisanda Octariyani,Ekonomi & Bisnis,Manajemen
-2321004,Agela Purwaningsih,Ekonomi & Bisnis,Akuntansi
+2421049,Dian Pahera,FKIP,Pendidikan Bahasa dan Sastra Indonesia
+2421048,Shinta Amelia,FKIP,Pendidikan Bahasa dan Sastra Indonesia
+2451067,Zurriyah Safitri,FISIP,Ilmu Komunikasi
+2323023,Rizka Tartila Hafiza,FKIP,Pendidikan Bahasa Inggris
+2421051,Zycra Zeva Az Zahra,FKIP,Pendidikan Bahasa dan Sastra Indonesia
+2411017,Ovie Della Putri,Ekonomi & Bisnis,Manajemen
+2422019,Suci Damai Yanti,FKIP,Teknologi Pendidikan
+2413009,Dania,Ekonomi & Bisnis,Akuntansi
+2323024,Mona Amelia,FKIP,Pendidikan Bahasa Inggris
+2413010,Desty Amelia,Ekonomi & Bisnis,Akuntansi
+2323012,Ratu Aysa,FKIP,Pendidikan Bahasa Inggris
+2411073,Kisanda Octariyani,Ekonomi & Bisnis,Manajemen
+2411053,Agela Purwaningsih,Ekonomi & Bisnis,Manajemen
 2311005,M. Danda Septian,FKIP,Pendidikan Bahasa Indonesia
 2311006,Fando Abdi Juarta,FKIP,Pendidikan Bahasa Inggris
 2311007,Adji Kurniawan,FKIP,Pendidikan Matematika
-2311008,Jestri Rahayu,FKIP,Pendidikan Biologi
-2335004,Nazwa Disalsabila Hasanah,Teknik & Komputer,Informatika
-2335005,Destia,Teknik & Komputer,Sistem Informasi
-2335006,Melvianies Jovianka,Teknik & Komputer,Teknik Industri
-2351003,Irhena Kesumawhardani,FISIP,Ilmu Komunikasi
-2351004,Sepvie Olivia,FISIP,Ilmu Administrasi Negara
-2321005,Keisha Yumna Salsabila,Ekonomi & Bisnis,Manajemen
-2321006,Anissa Maharani,Ekonomi & Bisnis,Akuntansi
-2311009,Nevi Ayu Nirmala,FKIP,Pendidikan Bahasa Indonesia
-2311010,Aisyah Adinda Paramita,FKIP,Pendidikan Bahasa Inggris
-2311011,Diva Lauren,FKIP,Pendidikan Matematika
-2311012,Resta Widayanti,FKIP,Pendidikan Biologi
-2335007,Tiara Maharani,Teknik & Komputer,Informatika
+2423007,Jestri Rahayu,FKIP,Pendidikan Bahasa Inggris
+2421056,Nazwa Disalsabila Hasanah,FKIP,Pendidikan Bahasa dan Sastra Indonesia
+2412005,Destia,Ekonomi & Bisnis,Ekonomi Pembangunan
+2411018,Melvianies Jovianka,Ekonomi & Bisnis,Manajemen
+2431056,Irhena Kesumawhardani,Teknik & Komputer,Teknik Sipil
+2411024,Sepvie Olivia,Ekonomi & Bisnis,Manajemen
+2451054,Keisha Yumna Salsabila,FISIP,Ilmu Komunikasi
+2442015,Anissa Maharani,Pertanian,Agribisnis
+2323009,Nevi Ayu Nirmala,FKIP,Pendidikan Bahasa Inggris
+2451058,Aisyah Adinda Paramita,FISIP,Ilmu Komunikasi
+2451057,Diva Lauren,FISIP,Ilmu Komunikasi
+2323020,Resta Widayanti,FKIP,Pendidikan Bahasa Inggris
+2411001,Tiara Maharani,Ekonomi & Bisnis,Manajemen
